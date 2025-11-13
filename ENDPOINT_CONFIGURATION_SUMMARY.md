@@ -43,57 +43,31 @@ Three new guides:
 ### Your Endpoint Dashboard
 https://endpoints.huggingface.co/JohnDcc/endpoints/dedicated
 
+### Your Endpoint URL
+`https://um5pw9qp4dg1y5n7.us-east4.gcp.endpoints.huggingface.cloud`
+
+### Model Configured
+`stabilityai/stable-diffusion-xl-base-1.0`
+
 ### Step-by-Step
 
-#### 1. Get Endpoint URL
-On your dashboard page, find the **"Endpoint URL"**:
-- Format: `https://xxxxx-xxxxx.us-east-1.aws.endpoints.huggingface.cloud`
-- This is NOT `https://endpoints.huggingface.co/JohnDcc/endpoints/dedicated`
-- Look for a box labeled "Endpoint", "Overview", or "API"
-
-#### 2. Configure in App
+#### 1. Configure in App
 1. Open Bella's Magic Image Editor
 2. Click **⚙️ Settings**
 3. Fill in:
    - **Hugging Face API-nyckel**: `hf_xxxxx...` (from https://huggingface.co/settings/tokens)
-   - **Custom Inference Endpoint**: Paste the URL from step 1
+   - **Custom Inference Endpoint**: `https://um5pw9qp4dg1y5n7.us-east4.gcp.endpoints.huggingface.cloud`
 4. Click **Spara** (Save)
 
-#### 3. Update Model in Code
+#### 2. Model is Automatically Configured
+The code now automatically uses `stabilityai/stable-diffusion-xl-base-1.0` when your custom endpoint is detected. No manual code changes needed!
 
-**Find which model your endpoint uses:**
-- On dashboard, check "Model Repository" field
-- Common examples:
-  - `stablediffusionapi/omnigenxl-nsfw-sfw`
-  - `diffusers/stable-diffusion-xl-1.0-inpainting-0.1`
-  - `stabilityai/stable-diffusion-xl-base-1.0`
+#### 3. First Use - Model Loading
+- **First image generation**: 30-60 seconds (model loading from cold start)
+- You'll see: "Modellen laddas (detta kan ta 30-60 sekunder vid första användningen). Vänta och försök igen."
+- **Just wait and retry** - subsequent requests will be much faster (5-15 seconds)
 
-**Edit `/services/huggingFaceService.ts`:**
-
-Line ~528 (Text-to-Image):
-```typescript
-// Change from:
-const model = 'runwayml/stable-diffusion-v1-5';
-
-// To:
-const model = 'stablediffusionapi/omnigenxl-nsfw-sfw';  // Use YOUR model
-```
-
-Line ~293 (Inpainting, if applicable):
-```typescript
-// Change from:
-const model = 'runwayml/stable-diffusion-inpainting';
-
-// To:
-const model = 'diffusers/stable-diffusion-xl-1.0-inpainting-0.1';  // Use YOUR model
-```
-
-**Rebuild:**
-```bash
-npm run build
-```
-
-#### 4. Test
+#### 4. Test Connection
 In browser console (F12):
 ```javascript
 await testHFConnection()
@@ -103,6 +77,18 @@ Should return:
 ```javascript
 { success: true, message: "Connection successful!" }
 ```
+
+---
+
+## What You Get
+
+With your endpoint configured:
+- ✅ **1024x1024 resolution** (SDXL quality)
+- ✅ **NSFW support** (explicit prompts work)
+- ✅ **Higher quality** than SD 1.5
+- ✅ **All features work**: text-to-image, editing, inpainting, outpainting
+- ✅ **Auto-scaling**: Endpoint scales to zero when not in use (saves money)
+
 
 ---
 

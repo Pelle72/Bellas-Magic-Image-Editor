@@ -289,18 +289,15 @@ export const inpaintImage = async (
     console.log('[inpaintImage] Mask blob size:', maskBlob.size, 'bytes');
 
     // Use Stable Diffusion Inpainting model
-    // Using SD 1.5 inpainting as it's the most reliable and accessible via Inference API
-    // If using a custom endpoint, you can use higher quality models like SDXL
-    const model = 'runwayml/stable-diffusion-inpainting';  // Most reliable
-    
-    // Alternative models (uncomment to use with custom endpoint):
-    // const model = 'diffusers/stable-diffusion-xl-1.0-inpainting-0.1';  // SDXL inpainting (requires custom endpoint)
-    // const model = 'stabilityai/stable-diffusion-2-inpainting';          // SD 2.0 inpainting
+    // When using custom endpoint, use SDXL for better quality
+    // Default to SD 1.5 inpainting for public API (most reliable)
+    const customEndpoint = getHFCustomEndpoint();
+    const model = customEndpoint
+      ? 'stabilityai/stable-diffusion-xl-base-1.0'  // SDXL works for inpainting too
+      : 'runwayml/stable-diffusion-inpainting';      // SD 1.5 inpainting for public API
     
     console.log('[inpaintImage] Model:', model);
     
-    // Check if custom endpoint is configured
-    const customEndpoint = getHFCustomEndpoint();
     const apiUrl = customEndpoint 
       ? customEndpoint  // Use custom endpoint directly
       : `https://api-inference.huggingface.co/models/${model}`;  // Use public API with model
@@ -342,6 +339,10 @@ export const inpaintImage = async (
         throw new Error('Ogiltig Hugging Face API-nyckel. Kontrollera din nyckel i inställningarna.');
       }
       if (response.status === 503) {
+        // Model is loading - especially common for custom endpoints on first request
+        if (customEndpoint) {
+          throw new Error('Modellen laddas (detta kan ta 30-60 sekunder vid första användningen). Vänta och försök igen.');
+        }
         throw new Error('Modellen laddas. Vänta några sekunder och försök igen.');
       }
       throw new Error(`Hugging Face API-fel (${response.status}): ${errorText}`);
@@ -523,21 +524,23 @@ export const generateImageFromText = async (
     console.log('[generateImageFromText] Prompt:', prompt);
 
     // Use Stable Diffusion model for text-to-image generation
-    // Using SD 1.5 as it's the most reliable and widely accessible model via Inference API
-    // If using a custom endpoint, you can use higher quality NSFW models
-    const model = 'runwayml/stable-diffusion-v1-5';  // Most reliable, always accessible
+    // When using custom endpoint, use SDXL for 1024x1024 resolution and NSFW support
+    // Default to SD 1.5 for public API (most reliable)
+    const customEndpoint = getHFCustomEndpoint();
+    const model = customEndpoint 
+      ? 'stabilityai/stable-diffusion-xl-base-1.0'  // SDXL for custom endpoint (1024x1024, NSFW)
+      : 'runwayml/stable-diffusion-v1-5';            // SD 1.5 for public API (512x512)
     
-    // Alternative models (uncomment to use with custom endpoint):
-    // const model = 'stablediffusionapi/omnigenxl-nsfw-sfw';  // NSFW XL (requires custom endpoint)
-    // const model = 'stabilityai/stable-diffusion-2-1';        // SD 2.1 (good quality)
-    // const model = 'CompVis/stable-diffusion-v1-4';           // SD 1.4 (older but reliable)
+    // Alternative models for custom endpoint:
+    // const model = 'stablediffusionapi/omnigenxl-nsfw-sfw';  // NSFW XL (if available)
+    // const model = 'stabilityai/stable-diffusion-2-1';        // SD 2.1
     
     // Check if custom endpoint is configured
-    const customEndpoint = getHFCustomEndpoint();
     const apiUrl = customEndpoint 
       ? customEndpoint  // Use custom endpoint directly
       : `https://api-inference.huggingface.co/models/${model}`;  // Use public API with model
     
+    console.log('[generateImageFromText] Model:', model);
     console.log('[generateImageFromText] API URL:', customEndpoint ? 'Custom Endpoint' : apiUrl);
 
     console.log('[generateImageFromText] Sending request to Hugging Face API...');
@@ -566,6 +569,10 @@ export const generateImageFromText = async (
         throw new Error('Ogiltig Hugging Face API-nyckel. Kontrollera din nyckel i inställningarna.');
       }
       if (response.status === 503) {
+        // Model is loading - especially common for custom endpoints on first request
+        if (customEndpoint) {
+          throw new Error('Modellen laddas (detta kan ta 30-60 sekunder vid första användningen). Vänta och försök igen.');
+        }
         throw new Error('Modellen laddas. Vänta några sekunder och försök igen.');
       }
       throw new Error(`Hugging Face API-fel (${response.status}): ${errorText}`);
