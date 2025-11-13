@@ -8,6 +8,9 @@ import OpenAI from 'openai';
 let userApiKey: string | null = null;
 
 // Initialize from localStorage if available (browser environment)
+// Security note: API keys are stored in clear text in localStorage.
+// This is acceptable for client-side apps where users manage their own keys.
+// For production, consider moving API calls to a backend server.
 if (typeof window !== 'undefined') {
   const storedKey = localStorage.getItem('xai_api_key');
   if (storedKey) {

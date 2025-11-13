@@ -13,6 +13,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
 
   useEffect(() => {
     // Load API key from localStorage or environment
+    // Security note: Keys are stored in clear text in localStorage.
+    // This is standard for client-side apps where users manage their own keys.
     const storedKey = localStorage.getItem('xai_api_key');
     const currentKey = storedKey || getApiKey() || '';
     setApiKeyLocal(currentKey);
@@ -75,6 +77,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
             >
               console.x.ai
             </a>
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            🔒 Din API-nyckel sparas lokalt i din webbläsare och skickas aldrig till någon annan än xAI.
           </p>
         </div>
 
