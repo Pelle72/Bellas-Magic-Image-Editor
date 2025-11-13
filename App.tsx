@@ -353,6 +353,10 @@ const App: React.FC = () => {
             const ctx = canvas.getContext('2d');
             if (!ctx) throw new Error("Kunde inte skapa canvas-kontext.");
 
+            // Fill with a gray background so AI knows what areas to extend
+            ctx.fillStyle = '#808080';
+            ctx.fillRect(0, 0, W_new, H_new);
+
             const dx = (W_new - W_orig) / 2;
             const dy = (H_new - H_orig) / 2;
             ctx.drawImage(image, dx, dy, W_orig, H_orig);
@@ -365,9 +369,8 @@ const App: React.FC = () => {
             
             setLoadingMessage(`AI expanderar bilden till ${aspectRatio}...`);
             
-            // Create a prompt that emphasizes preserving the center image exactly
-            // The prompt instructs the AI to recreate the center image perfectly and extend only the edges
-            const promptTemplate = `Expert photorealistic image expansion to ${aspectRatio} aspect ratio. CRITICAL: The center contains the original image that MUST be recreated EXACTLY as it appears - preserve every detail, color, lighting, and element of the center image with perfect fidelity. ONLY extend and fill the transparent border areas (edges) seamlessly to match the scene. The transparent areas appear as checkerboard pattern - these are the ONLY areas to fill. Context: \${description}`;
+            // Create a prompt that asks AI to extend the scene into the gray areas
+            const promptTemplate = `Photorealistic image outpainting to ${aspectRatio} aspect ratio. The center shows the main subject/scene. The GRAY BORDER AREAS need to be filled with a natural extension of the scene - imagine what would exist beyond the edges and seamlessly blend it in. Match the lighting, style, colors, and atmosphere of the center image perfectly. Context: \${description}`;
             
             const expandPrompt = buildPromptWithDescription(
               promptTemplate,
@@ -377,13 +380,48 @@ const App: React.FC = () => {
             
             const result = await editImageWithPrompt(compositeBase64, compositeMimeType, expandPrompt);
             
-            // Since xAI API doesn't support custom aspect ratios, resize the generated image
-            // to match the desired aspect ratio
+            // Now overlay the exact original image on top to ensure perfect preservation
+            setLoadingMessage(`Återställer original i centrum...`);
+            
+            const generatedImage = new Image();
+            generatedImage.src = `data:${result.mimeType};base64,${result.base64}`;
+            
+            await new Promise<void>((resolve, reject) => {
+                generatedImage.onload = () => resolve();
+                generatedImage.onerror = reject;
+            });
+            
+            // Create final canvas
+            const overlayCanvas = document.createElement('canvas');
+            overlayCanvas.width = generatedImage.naturalWidth;
+            overlayCanvas.height = generatedImage.naturalHeight;
+            const overlayCtx = overlayCanvas.getContext('2d');
+            if (!overlayCtx) throw new Error("Kunde inte skapa canvas-kontext.");
+            
+            // Draw the AI-generated extended image
+            overlayCtx.drawImage(generatedImage, 0, 0);
+            
+            // Calculate where to place the original image (centered)
+            const scale = Math.min(
+                overlayCanvas.width / W_orig,
+                overlayCanvas.height / H_orig
+            );
+            const scaledW = W_orig * scale;
+            const scaledH = H_orig * scale;
+            const centerX = (overlayCanvas.width - scaledW) / 2;
+            const centerY = (overlayCanvas.height - scaledH) / 2;
+            
+            // Draw the original image on top to preserve it exactly
+            overlayCtx.drawImage(image, centerX, centerY, scaledW, scaledH);
+            
+            // Resize to target aspect ratio
             setLoadingMessage(`Anpassar bildstorlek till ${aspectRatio}...`);
             const targetDimensions = calculateAspectRatioDimensions(aspectRatio);
+            const finalBase64 = overlayCanvas.toDataURL('image/png').split(',')[1];
+            
             const resizedResult = await resizeImageToAspectRatio(
-                result.base64,
-                result.mimeType,
+                finalBase64,
+                'image/png',
                 targetDimensions.width,
                 targetDimensions.height
             );
