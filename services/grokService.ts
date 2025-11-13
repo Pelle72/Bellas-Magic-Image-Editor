@@ -59,9 +59,13 @@ export const editImageWithPrompt = async (
   const client = getGrokClient();
 
   try {
+    console.log('[editImageWithPrompt] Starting image edit process...');
+    console.log('[editImageWithPrompt] User prompt:', prompt);
+    
     const dataUrl = `data:${mimeType};base64,${base64ImageData}`;
     
     // Step 1: Use Grok-4 with vision to analyze the image and create a detailed generation prompt
+    console.log('[editImageWithPrompt] Step 1: Analyzing image with Grok-4 vision...');
     const analysisResponse = await client.chat.completions.create({
       model: "grok-4-fast-reasoning",
       messages: [
@@ -101,8 +105,11 @@ Respond ONLY with the image generation prompt, no other text.`
       throw new Error("AI:n kunde inte skapa en redigeringsprompt.");
     }
 
+    console.log('[editImageWithPrompt] Generated image prompt:', imagePrompt);
+
     // Ensure the prompt doesn't exceed the 1024 character limit for image generation
     const truncatedPrompt = truncatePrompt(imagePrompt);
+    console.log('[editImageWithPrompt] Truncated prompt length:', truncatedPrompt.length);
 
     // Step 2: Generate the edited image using Grok's image generation model
     // Note: Grok's image generation endpoint follows OpenAI's format
@@ -110,50 +117,76 @@ Respond ONLY with the image generation prompt, no other text.`
     // Images are generated at the API's default resolution.
     // Content policy is inherently permissive for fashion, swimwear, and artistic content.
     // Style preferences should be incorporated directly into the prompt text.
-    const response = await client.images.generate({
-      model: "grok-2-image-1212",
-      prompt: truncatedPrompt,
-      n: 1
-    });
+    console.log('[editImageWithPrompt] Step 2: Generating image with Grok-2...');
+    console.log('[editImageWithPrompt] Prompt being sent:', truncatedPrompt);
+    
+    // Try to generate the image with explicit error handling
+    // Use b64_json format to avoid CORS issues when fetching generated images
+    let response;
+    try {
+      response = await client.images.generate({
+        model: "grok-2-image-1212",
+        prompt: truncatedPrompt,
+        n: 1,
+        response_format: "b64_json"  // Use base64 to avoid CORS issues
+      });
+      console.log('[editImageWithPrompt] Image generation response received');
+    } catch (genError: any) {
+      console.error('[editImageWithPrompt] Image generation failed:', genError);
+      // Provide more specific error message
+      if (genError.status === 404) {
+        throw new Error("AI:n kunde inte generera bilden: Bildgenerering stöds inte av denna API-version. Kontrollera att din API-nyckel har tillgång till grok-2-image-1212 modellen.");
+      }
+      throw genError; // Re-throw to be caught by outer catch block
+    }
 
     if (!response.data || response.data.length === 0) {
       throw new Error("AI:n returnerade inget bildsvar. Prova en annan prompt.");
     }
 
-    const imageUrl = response.data[0].url;
-    if (!imageUrl) {
+    // Step 3: Extract base64 data from response
+    const b64Data = response.data[0].b64_json;
+    if (!b64Data) {
       throw new Error("AI:n kunde inte generera bilden. Försök igen.");
     }
 
-    // Step 3: Fetch the generated image and convert to base64
-    const imageResponse = await fetch(imageUrl);
-    if (!imageResponse.ok) {
-      throw new Error(`Kunde inte hämta bilden från AI:n: ${imageResponse.status} ${imageResponse.statusText}`);
-    }
-    const blob = await imageResponse.blob();
-    const base64 = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        resolve(result.split(',')[1]);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-
+    console.log('[editImageWithPrompt] Image edit completed successfully');
     return {
-      base64,
-      mimeType: 'image/png'
+      base64: b64Data,
+      mimeType: 'image/jpeg'  // xAI generates JPEG format
     };
 
   } catch (error) {
     console.error("Error editing image with Grok:", error);
+    // Log full error details for debugging
+    if (error && typeof error === 'object') {
+      console.error("Error details:", JSON.stringify(error, null, 2));
+    }
+    
     if (error instanceof Error) {
       // Check for user-friendly error messages
       const userFriendlyPrefixes = ["AI:n", "Din prompt", "Redigeringen blockerades", "Redigeringen stoppades"];
       if (userFriendlyPrefixes.some(p => error.message.startsWith(p))) {
         throw error;
       }
+      
+      // Check for OpenAI SDK errors with more details
+      if ('status' in error || 'code' in error) {
+        const apiError = error as any;
+        if (apiError.status === 401) {
+          throw new Error(`Kunde inte redigera bilden: Ogiltig API-nyckel. Kontrollera din xAI API-nyckel i inställningarna.`);
+        }
+        if (apiError.status === 429) {
+          throw new Error(`Kunde inte redigera bilden: API-gräns överskriden. Vänta en stund och försök igen.`);
+        }
+        if (apiError.status === 400) {
+          throw new Error(`Kunde inte redigera bilden: Ogiltig förfrågan. ${apiError.message || 'Prova en annan prompt eller bild.'}`);
+        }
+        if (apiError.status) {
+          throw new Error(`Kunde inte redigera bilden: API-fel (${apiError.status}). ${apiError.message || 'Försök igen.'}`);
+        }
+      }
+      
       // Check for network/fetch errors
       if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
         throw new Error(`Kunde inte redigera bilden: Nätverksfel. Kontrollera din internetanslutning och API-nyckel.`);
@@ -207,11 +240,34 @@ export const generatePromptFromImage = async (
     
   } catch (error) {
     console.error("Error generating prompt from image:", error);
+    // Log full error details for debugging
+    if (error && typeof error === 'object') {
+      console.error("Error details:", JSON.stringify(error, null, 2));
+    }
+    
     if (error instanceof Error) {
       const userFriendlyPrefixes = ["AI:n", "Bildanalysen blockerades", "Bildanalysen stoppades"];
       if (userFriendlyPrefixes.some(p => error.message.startsWith(p))) {
         throw error;
       }
+      
+      // Check for OpenAI SDK errors with more details
+      if ('status' in error || 'code' in error) {
+        const apiError = error as any;
+        if (apiError.status === 401) {
+          throw new Error(`Kunde inte analysera bilden: Ogiltig API-nyckel. Kontrollera din xAI API-nyckel i inställningarna.`);
+        }
+        if (apiError.status === 429) {
+          throw new Error(`Kunde inte analysera bilden: API-gräns överskriden. Vänta en stund och försök igen.`);
+        }
+        if (apiError.status === 400) {
+          throw new Error(`Kunde inte analysera bilden: Ogiltig förfrågan. ${apiError.message || ''}`);
+        }
+        if (apiError.status) {
+          throw new Error(`Kunde inte analysera bilden: API-fel (${apiError.status}). ${apiError.message || 'Försök igen.'}`);
+        }
+      }
+      
       // Check for network/fetch errors
       if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
         throw new Error(`Kunde inte analysera bilden: Nätverksfel. Kontrollera din internetanslutning och API-nyckel.`);
@@ -304,48 +360,57 @@ export const createImageFromMultiple = async (
     // Note: The API does not support 'style', 'size', or 'quality' parameters.
     // Images are generated at the API's default resolution.
     // Content policy is inherently permissive for fashion, swimwear, and artistic content.
+    // Use b64_json format to avoid CORS issues when fetching generated images
     const generationResponse = await client.images.generate({
       model: "grok-2-image-1212",
       prompt: truncatedFusionPrompt,
-      n: 1
+      n: 1,
+      response_format: "b64_json"  // Use base64 to avoid CORS issues
     });
 
     if (!generationResponse.data || generationResponse.data.length === 0) {
       throw new Error("AI:n returnerade ett tomt svar.");
     }
 
-    const imageUrl = generationResponse.data[0].url;
-    if (!imageUrl) {
+    const b64Data = generationResponse.data[0].b64_json;
+    if (!b64Data) {
       throw new Error("AI:n kunde inte skapa bilden.");
     }
 
-    // Fetch and convert to base64
-    const imageResponse = await fetch(imageUrl);
-    if (!imageResponse.ok) {
-      throw new Error(`Kunde inte hämta bilden från AI:n: ${imageResponse.status} ${imageResponse.statusText}`);
-    }
-    const blob = await imageResponse.blob();
-    const base64 = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        resolve(result.split(',')[1]);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-
     return {
-      base64,
-      mimeType: 'image/png'
+      base64: b64Data,
+      mimeType: 'image/jpeg'  // xAI generates JPEG format
     };
 
   } catch (error) {
     console.error("Error creating image from multiple sources:", error);
+    // Log full error details for debugging
+    if (error && typeof error === 'object') {
+      console.error("Error details:", JSON.stringify(error, null, 2));
+    }
+    
     if (error instanceof Error) {
       if (error.message.startsWith("AI:n") || error.message.startsWith("Bildskapandet")) {
         throw error;
       }
+      
+      // Check for OpenAI SDK errors with more details
+      if ('status' in error || 'code' in error) {
+        const apiError = error as any;
+        if (apiError.status === 401) {
+          throw new Error(`Kunde inte skapa bilden: Ogiltig API-nyckel. Kontrollera din xAI API-nyckel i inställningarna.`);
+        }
+        if (apiError.status === 429) {
+          throw new Error(`Kunde inte skapa bilden: API-gräns överskriden. Vänta en stund och försök igen.`);
+        }
+        if (apiError.status === 400) {
+          throw new Error(`Kunde inte skapa bilden: Ogiltig förfrågan. ${apiError.message || ''}`);
+        }
+        if (apiError.status) {
+          throw new Error(`Kunde inte skapa bilden: API-fel (${apiError.status}). ${apiError.message || 'Försök igen.'}`);
+        }
+      }
+      
       // Check for network/fetch errors
       if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
         throw new Error(`Kunde inte skapa bilden: Nätverksfel. Kontrollera din internetanslutning och API-nyckel.`);
