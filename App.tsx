@@ -365,9 +365,9 @@ const App: React.FC = () => {
             
             setLoadingMessage(`AI expanderar bilden till ${aspectRatio}...`);
             
-            // Create a shorter, more concise prompt that fits within 1024 character limit
-            // Include aspect ratio in the prompt to help the AI generate appropriate dimensions
-            const promptTemplate = `Photorealistic outpainting in ${aspectRatio} aspect ratio: extend the central photo by filling transparent areas seamlessly. Match the image perfectly. Ignore checkerboard patterns - fill transparent pixels only. No borders or frames. Image context: \${description}`;
+            // Create a prompt that emphasizes preserving the center image exactly
+            // The prompt instructs the AI to recreate the center image perfectly and extend only the edges
+            const promptTemplate = `Expert photorealistic image expansion to ${aspectRatio} aspect ratio. CRITICAL: The center contains the original image that MUST be recreated EXACTLY as it appears - preserve every detail, color, lighting, and element of the center image with perfect fidelity. ONLY extend and fill the transparent border areas (edges) seamlessly to match the scene. The transparent areas appear as checkerboard pattern - these are the ONLY areas to fill. Context: \${description}`;
             
             const expandPrompt = buildPromptWithDescription(
               promptTemplate,
