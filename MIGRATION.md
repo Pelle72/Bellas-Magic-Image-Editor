@@ -14,12 +14,14 @@ For a typical image editing session with multiple operations, this can reduce co
 
 ### Less Restrictive Content Policy
 
-Grok's "Spicy Mode" is designed to be more permissive, which is essential for this application's use case:
+Grok's models are designed to be more permissive, which is essential for this application's use case:
 
 - ✅ Fashion photography (swimwear, lingerie, etc.) is fully supported
 - ✅ Artistic nude content is allowed
 - ✅ Professional modeling and creative work is not over-filtered
 - ✅ Better handling of body-positive and inclusive content
+
+**Note**: While "Spicy Mode" exists in Grok's web interface, the API does not support a separate style parameter. The permissive content policy is inherent to Grok's models themselves.
 
 This addresses the major issue where Gemini was blocking legitimate professional fashion and modeling content.
 
@@ -55,17 +57,18 @@ This addresses the major issue where Gemini was blocking legitimate professional
    - Lower cost
    - Ideal for straightforward tasks
 
-3. **grok-imagine-4** - For image generation
-   - Supports "spicy" mode for less restricted content
+3. **grok-2-image-1212** - For image generation
+   - Inherently permissive content policy
    - 1024x1024 image generation
    - High-quality outputs
+   - **Note**: The API does not support style parameters; the permissive policy is built into the model
 
 ## Code Changes
 
 ### Service Layer
 - Created new `services/grokService.ts` replacing `services/geminiService.ts`
 - Maintained the same function signatures for minimal disruption
-- Added support for Grok-specific features (spicy mode)
+- Uses Grok's inherently permissive content policy
 
 ### Key Functions
 

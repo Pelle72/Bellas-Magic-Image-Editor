@@ -10,10 +10,12 @@ An AI-powered image editing application that uses xAI's Grok API for cost-effect
 
 This app has been migrated from Google Gemini API to xAI's Grok API for significant improvements:
 - **50-70% lower costs** compared to Gemini for image editing operations
-- **Less restrictive content policies** - Better support for fashion, swimwear, and artistic content
-- **"Spicy Mode"** - More permissive content generation without over-filtering professional photography
-- Access to Grok-4 with vision capabilities and Grok-Imagine image generation
+- **Less restrictive content policies** - Grok's models inherently support fashion, swimwear, and artistic content without over-filtering
+- **Permissive content generation** - Better handling of professional photography and creative content compared to competitors
+- Access to Grok-4 with vision capabilities and Grok-2-Image generation
 - Competitive pricing: $0.20-$0.40 per 1M input tokens, $0.50-$1.00 per 1M output tokens
+
+**Note:** While "Spicy Mode" is available in Grok's web interface, the API does not support style parameters. Grok's content policy is inherently more permissive than alternatives like Gemini or OpenAI.
 
 ## Run Locally
 

@@ -106,13 +106,13 @@ Respond ONLY with the image generation prompt, no other text.`
 
     // Step 2: Generate the edited image using Grok's image generation model
     // Note: Grok's image generation endpoint follows OpenAI's format
+    // Note: The API does not support a 'style' parameter. Content policy is inherently
+    // permissive for fashion, swimwear, and artistic content. Style preferences should
+    // be incorporated directly into the prompt text.
     const response = await client.images.generate({
       model: "grok-2-image-1212",
       prompt: truncatedPrompt,
-      n: 1,
-      // Grok supports 'spicy' mode for less restricted content
-      // @ts-ignore - Grok-specific parameter
-      style: "spicy"
+      n: 1
     });
 
     if (!response.data || response.data.length === 0) {
@@ -289,12 +289,12 @@ export const createImageFromMultiple = async (
     const truncatedFusionPrompt = truncatePrompt(fusionPrompt);
 
     // Now generate a new image based on this fusion description using Grok's image generation model
+    // Note: The API does not support a 'style' parameter. Content policy is inherently
+    // permissive for fashion, swimwear, and artistic content.
     const generationResponse = await client.images.generate({
       model: "grok-2-image-1212",
       prompt: truncatedFusionPrompt,
-      n: 1,
-      // @ts-ignore - Grok-specific parameter for less restricted content
-      style: "spicy"
+      n: 1
     });
 
     if (!generationResponse.data || generationResponse.data.length === 0) {

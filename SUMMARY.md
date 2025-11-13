@@ -13,10 +13,11 @@ After thorough research, **xAI's Grok API** was selected as the replacement for 
 - **Real-world impact**: $0.50-$2.00 per session → $0.05-$0.20 per session
 
 ### 2. Permissive Content Policy
-- **"Spicy Mode"**: Designed for creative content without over-filtering
+- **Inherently Permissive**: Grok models are designed for creative content without over-filtering
 - **Fashion-friendly**: Swimwear, lingerie, and artistic content fully supported
 - **No false positives**: Professional photography not blocked
 - **Body-positive**: Inclusive of all body types and artistic expression
+- **Note**: While "Spicy Mode" exists in Grok's web interface, the API does not support style parameters. The permissive policy is built into the models themselves.
 
 ### 3. Technical Advantages
 - **OpenAI-compatible API**: Easy integration using standard SDK
@@ -147,13 +148,15 @@ See `TESTING_GUIDE.md` for complete test scenarios with pass criteria.
 ❌ False positives on: artistic photography, fashion catalogs
 ```
 
-**Grok's Response** (with Spicy Mode):
+**Grok's Response**:
 ```
 ✅ Processes swimwear without issues
 ✅ Handles lingerie professionally
 ✅ Supports artistic nude photography
 ✅ No false positives on fashion content
 ```
+
+**Note**: Grok's permissive content policy is inherent to the models. The API does not support a separate "spicy" style parameter.
 
 This is ESSENTIAL for the app's use case based on the age gate and content warnings in the original code.
 
@@ -271,11 +274,12 @@ All original Gemini code is preserved in git history at commit `4c651f9`.
 - Available globally (check regional restrictions)
 
 ### "Is it much more capable of creating NSFW?"
-**YES** - Grok's "Spicy Mode" is specifically designed to be more permissive with creative content:
+**YES** - Grok models are specifically designed to be more permissive with creative content:
 - Allows fashion, swimwear, lingerie without over-filtering
 - Supports artistic photography that other APIs block
 - Less aggressive safety filters overall
 - Still blocks illegal content and non-consensual deepfakes
+- **Note**: While "Spicy Mode" exists in Grok's web interface, the API's permissive policy is built into the models themselves. No special parameter is needed.
 
 This makes it PERFECT for your app's use case (age-gated professional image editor).
 

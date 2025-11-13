@@ -273,8 +273,8 @@ Compare to previous Gemini costs (roughly 10-20x higher).
 ### Issue: Content still being blocked
 **Solution**:
 - Verify you're using Grok API (check network tab, should see `api.x.ai`)
-- Try rephrasing prompt to be more descriptive
-- Check that `style: "spicy"` parameter is being sent
+- Try rephrasing prompt to be more descriptive and detailed
+- Grok's permissive content policy is inherent to the model (no special parameter needed)
 - Report specific cases for prompt engineering improvements
 
 ## Success Criteria Summary
