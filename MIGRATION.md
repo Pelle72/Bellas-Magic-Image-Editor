@@ -197,10 +197,11 @@ Monitor your xAI API usage at: [https://console.x.ai/usage](https://console.x.ai
 
 ## Known Issues & Limitations
 
-1. **Image size**: Currently limited to 1024x1024 (same as before)
+1. **Image size**: Generated at API's default resolution. The xAI API does not support the 'size' parameter for custom dimensions.
 2. **API compatibility**: Using OpenAI SDK may not support all Grok-specific features
 3. **Rate limits**: May be lower than Gemini in free tier
 4. **Regional availability**: Check if xAI API is available in your region
+5. **Unsupported parameters**: The API does not support 'size', 'quality', or 'style' parameters
 
 ## Future Improvements
 
