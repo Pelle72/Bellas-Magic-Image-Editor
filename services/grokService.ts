@@ -106,7 +106,6 @@ Respond ONLY with the image generation prompt, no other text.`
       model: "grok-imagine-4",
       prompt: imagePrompt,
       n: 1,
-      size: "1024x1024",
       // Grok supports 'spicy' mode for less restricted content
       // @ts-ignore - Grok-specific parameter
       style: "spicy"
@@ -286,7 +285,6 @@ export const createImageFromMultiple = async (
       model: "grok-imagine-4",
       prompt: `Create a single artistic image that fuses these concepts: ${fusionDescription}`,
       n: 1,
-      size: "1024x1024",
       // @ts-ignore - Grok-specific parameter for less restricted content
       style: "spicy"
     });
