@@ -59,9 +59,11 @@ This addresses the major issue where Gemini was blocking legitimate professional
 
 3. **grok-2-image-1212** - For image generation
    - Inherently permissive content policy
-   - 1024x1024 image generation
+   - Typical output dimensions: 1024×1024 (square), 1024×768 (4:3), 1792×1024 (landscape), 1024×1792 (portrait)
+   - Maximum dimension: 1792 pixels on the long edge
+   - Output format: JPEG
    - High-quality outputs
-   - **Note**: The API does not support style parameters; the permissive policy is built into the model
+   - **Note**: The API does not support 'size', 'quality', or 'style' parameters. Images are post-processed to match desired aspect ratios.
 
 ## Code Changes
 
@@ -197,11 +199,12 @@ Monitor your xAI API usage at: [https://console.x.ai/usage](https://console.x.ai
 
 ## Known Issues & Limitations
 
-1. **Image size**: Generated at API's default resolution. The xAI API does not support the 'size' parameter for custom dimensions.
-2. **API compatibility**: Using OpenAI SDK may not support all Grok-specific features
-3. **Rate limits**: May be lower than Gemini in free tier
-4. **Regional availability**: Check if xAI API is available in your region
-5. **Unsupported parameters**: The API does not support 'size', 'quality', or 'style' parameters
+1. **Image size**: Generated at API's default resolution (typically 1024×1024 to 1792×1024 range). The xAI API does not support the 'size' parameter for custom dimensions. The app post-processes images to match desired aspect ratios.
+2. **Maximum resolution**: 1792 pixels on the longest edge. Images are resized post-generation to achieve exact aspect ratios.
+3. **API compatibility**: Using OpenAI SDK may not support all Grok-specific features
+4. **Rate limits**: May be lower than Gemini in free tier
+5. **Regional availability**: Check if xAI API is available in your region
+6. **Unsupported parameters**: The API does not support 'size', 'quality', or 'style' parameters
 
 ## Future Improvements
 

@@ -298,26 +298,50 @@ export const downscaleCanvasForAPI = (sourceCanvas: HTMLCanvasElement): HTMLCanv
 
 /**
  * Calculate target dimensions for a given aspect ratio
- * Returns dimensions that maintain the aspect ratio while staying within reasonable limits
- * The dimensions are optimized for good quality without being too large
+ * Returns dimensions optimized for xAI Grok image generation capabilities.
+ * 
+ * Based on xAI Grok's typical output dimensions:
+ * - Maximum dimension: 1792 pixels on the long edge
+ * - Common outputs: 1024×1024 (1:1), 1792×1024 (16:9), 1024×1792 (9:16), 1024×768 (4:3)
+ * 
+ * This function calculates dimensions that maximize quality within these constraints
+ * while maintaining the exact aspect ratio requested.
  */
 export const calculateAspectRatioDimensions = (aspectRatio: string): { width: number; height: number } => {
   const [ratioW, ratioH] = aspectRatio.split(':').map(Number);
   const targetRatio = ratioW / ratioH;
   
-  // Base size that provides good quality
+  // Maximum dimension supported by xAI Grok (based on research of actual outputs)
+  const MAX_DIMENSION = 1792;
+  // Standard base size for most common aspect ratios
   const BASE_SIZE = 1024;
   
   let width: number, height: number;
   
   if (targetRatio >= 1) {
     // Landscape or square: width is the longer dimension
-    width = BASE_SIZE;
-    height = Math.round(BASE_SIZE / targetRatio);
+    // Use larger dimension for wider aspect ratios to maximize quality
+    if (targetRatio >= 1.5) {
+      // Wide landscape (e.g., 3:2, 16:9) - use max dimension
+      width = MAX_DIMENSION;
+      height = Math.round(MAX_DIMENSION / targetRatio);
+    } else {
+      // Closer to square (e.g., 1:1, 4:3) - use base size
+      width = BASE_SIZE;
+      height = Math.round(BASE_SIZE / targetRatio);
+    }
   } else {
     // Portrait: height is the longer dimension
-    height = BASE_SIZE;
-    width = Math.round(BASE_SIZE * targetRatio);
+    // Use larger dimension for taller aspect ratios to maximize quality
+    if (targetRatio <= 0.67) {
+      // Tall portrait (e.g., 2:3, 9:16) - use max dimension
+      height = MAX_DIMENSION;
+      width = Math.round(MAX_DIMENSION * targetRatio);
+    } else {
+      // Closer to square (e.g., 3:4) - use base size
+      height = BASE_SIZE;
+      width = Math.round(BASE_SIZE * targetRatio);
+    }
   }
   
   return { width, height };
