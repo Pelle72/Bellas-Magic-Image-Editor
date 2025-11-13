@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'bella-magic-editor-v3';
+const CACHE_NAME = 'bella-magic-editor-v4';
 const urlsToCache = [
   './',
   './index.html',
@@ -36,6 +36,15 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET' || event.request.url.startsWith('chrome-extension://')) {
+    return;
+  }
+
+  // Don't cache API requests - let them go directly to the network
+  // This prevents the service worker from interfering with API calls
+  if (event.request.url.includes('api.x.ai') || 
+      event.request.url.includes('api-inference.huggingface.co') ||
+      event.request.url.includes('/v1/') ||
+      event.request.url.includes('/models/')) {
     return;
   }
 
