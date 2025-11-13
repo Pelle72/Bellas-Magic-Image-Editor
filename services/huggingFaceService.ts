@@ -92,8 +92,9 @@ export const inpaintImage = async (
     formData.append('image', imageBlob, 'image.png');
     formData.append('mask', maskBlob, 'mask.png');
 
-    // Use Stable Diffusion Inpainting model
-    const model = 'runwayml/stable-diffusion-inpainting';
+    // Use NSFW XL Inpainting model for better quality and unrestricted content
+    // This model provides superior results for all content types including NSFW
+    const model = 'stablediffusionapi/omnigenxl-nsfw-sfw';
     const apiUrl = `https://api-inference.huggingface.co/models/${model}`;
 
     const response = await fetch(apiUrl, {
@@ -249,8 +250,9 @@ export const generateImageFromText = async (
     console.log('[generateImageFromText] Generating image from text...');
     console.log('[generateImageFromText] Prompt:', prompt);
 
-    // Use Stable Diffusion XL for high-quality image generation
-    const model = 'stabilityai/stable-diffusion-xl-base-1.0';
+    // Use NSFW XL model for high-quality unrestricted image generation
+    // OmnigenXL NSFW/SFW provides excellent quality for all content types
+    const model = 'stablediffusionapi/omnigenxl-nsfw-sfw';
     const apiUrl = `https://api-inference.huggingface.co/models/${model}`;
 
     const response = await fetch(apiUrl, {
@@ -319,8 +321,7 @@ export const editImageWithPromptHF = async (
     console.log('[editImageWithPromptHF] Starting image editing with Hugging Face...');
     console.log('[editImageWithPromptHF] Prompt:', prompt);
 
-    // Create a mask that covers the entire image (all white = edit everything)
-    // This allows the model to make changes while using the original as reference
+    // Load and check image dimensions
     const img = new Image();
     img.src = `data:${mimeType};base64,${base64ImageData}`;
     await new Promise<void>((resolve, reject) => {
@@ -328,8 +329,44 @@ export const editImageWithPromptHF = async (
       img.onerror = reject;
     });
 
-    const width = img.naturalWidth;
-    const height = img.naturalHeight;
+    let width = img.naturalWidth;
+    let height = img.naturalHeight;
+    let processedBase64 = base64ImageData;
+    let processedMimeType = mimeType;
+
+    // Maximum resolution constraint for AI enhancement
+    // Prevents excessive upscaling that could cause API errors or quality issues
+    const MAX_DIMENSION = 2048;
+    
+    if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+      console.log(`[editImageWithPromptHF] Image exceeds max dimension (${MAX_DIMENSION}px), downscaling...`);
+      
+      // Calculate new dimensions while preserving aspect ratio
+      const aspectRatio = width / height;
+      if (width > height) {
+        width = MAX_DIMENSION;
+        height = Math.round(MAX_DIMENSION / aspectRatio);
+      } else {
+        height = MAX_DIMENSION;
+        width = Math.round(MAX_DIMENSION * aspectRatio);
+      }
+
+      // Downscale the image
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Kunde inte skapa canvas-kontext för nedskalning.');
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, width, height);
+
+      processedBase64 = canvas.toDataURL('image/png').split(',')[1];
+      processedMimeType = 'image/png';
+      
+      console.log(`[editImageWithPromptHF] Downscaled to ${width}x${height}`);
+    }
 
     // Create a white mask (edit entire image)
     const maskCanvas = document.createElement('canvas');
@@ -345,8 +382,8 @@ export const editImageWithPromptHF = async (
 
     // Use inpainting with full mask for image-to-image editing
     const result = await inpaintImage(
-      base64ImageData,
-      mimeType,
+      processedBase64,
+      processedMimeType,
       maskBase64,
       'image/png',
       prompt

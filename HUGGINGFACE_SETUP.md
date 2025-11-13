@@ -1,6 +1,26 @@
 # Hugging Face Setup Guide
 
-This guide explains how to get a Hugging Face API key and recommends high-quality NSFW-capable image generation models.
+This guide explains how to get a Hugging Face API key and provides information about NSFW-capable image generation models.
+
+## Quick Setup: Using NSFW XL (Default Configuration)
+
+The app is **pre-configured** to use the **OmnigenXL NSFW/SFW** model, which provides excellent quality for all content types including NSFW. No additional configuration is needed beyond getting your API key!
+
+### What's Already Configured
+
+The app automatically uses these models:
+- **Image Generation & Editing**: `stablediffusionapi/omnigenxl-nsfw-sfw`
+- **Inpainting**: `stablediffusionapi/omnigenxl-nsfw-sfw`
+
+These models are:
+- ✅ API-ready (no custom deployment needed)
+- ✅ High quality (SDXL-based)
+- ✅ NSFW-capable (unrestricted content)
+- ✅ Fast inference (optimized for Hugging Face)
+
+**You only need to get an API key to start using these models immediately!**
+
+---
 
 ## Getting a Hugging Face API Key
 
@@ -136,31 +156,74 @@ For high-quality image generation with NSFW/explicit content support, here are t
 
 ---
 
-## Using NSFW Models in This App
+## Using NSFW XL in This App
 
-### Current Implementation
-The app currently uses `runwayml/stable-diffusion-inpainting` for inpainting and outpainting. To use NSFW-capable models:
+### ✅ Already Configured!
 
-### Option 1: Modify the Service (Recommended for Developers)
-Edit `/services/huggingFaceService.ts` and change the model:
+The app is **already configured** to use **OmnigenXL NSFW/SFW** model. You don't need to change anything!
 
+**Current Configuration** (in `services/huggingFaceService.ts`):
 ```typescript
-// Current (line ~88):
-const model = 'runwayml/stable-diffusion-inpainting';
-
-// Change to NSFW-capable model:
+// For image generation and editing
 const model = 'stablediffusionapi/omnigenxl-nsfw-sfw';
-// or
-const model = 'Kernel/sd-nsfw';
+
+// For inpainting
+const model = 'stablediffusionapi/omnigenxl-nsfw-sfw';
 ```
 
-### Option 2: Use Inference Endpoints (Advanced)
-For production use with custom models:
+### How to Use
+
+1. **Get your Hugging Face API key** (see instructions above)
+2. **Enter it in Settings** (⚙️ icon)
+3. **Start creating!** The app automatically uses NSFW XL
+
+### What You Get
+
+✅ **Unrestricted content generation** - No safety filters blocking NSFW content
+✅ **High quality** - SDXL-based architecture for superior results
+✅ **Fast inference** - Optimized for Hugging Face Inference API
+✅ **No additional setup** - Works immediately with your API key
+
+### Hugging Face Console Configuration
+
+**You don't need to configure anything in the Hugging Face console!** The app uses the public Inference API which works automatically with your API key.
+
+However, if you want to monitor usage:
+1. Go to [Hugging Face Billing](https://huggingface.co/settings/billing)
+2. View your **Inference API usage** and costs
+3. Set up billing alerts if desired
+
+### Optional: Using Different NSFW Models
+
+If you want to try other models, edit `/services/huggingFaceService.ts`:
+
+```typescript
+// Line ~96 (for inpainting):
+const model = 'stablediffusionapi/omnigenxl-nsfw-sfw';  // Current
+// Change to:
+const model = 'Kernel/sd-nsfw';  // Lightweight option
+// or search for other models on Hugging Face
+
+// Line ~253 (for text-to-image):
+const model = 'stablediffusionapi/omnigenxl-nsfw-sfw';  // Current
+// Change to your preferred model
+```
+
+### Advanced: Using Dedicated Inference Endpoints
+
+For production use with custom models or guaranteed availability:
 1. Go to [Hugging Face Inference Endpoints](https://huggingface.co/inference-endpoints)
-2. Create a dedicated endpoint with your chosen NSFW model
-3. Update the API URL in the service
+2. Click "Create new endpoint"
+3. Select your NSFW model (e.g., NSFW XL, HiDream)
+4. Choose GPU tier (minimum: T4, recommended: A10G)
+5. Deploy and get your custom endpoint URL
+6. Update the `apiUrl` in `huggingFaceService.ts`
+
+**Cost**: Dedicated endpoints start at ~$0.60/hour but provide guaranteed uptime and custom model support.
 
 ---
+
+## Model Comparison: What's Available
 
 ## Important Considerations
 
