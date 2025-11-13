@@ -334,12 +334,12 @@ const App: React.FC = () => {
             setLoadingMessage(`AI expanderar bilden till ${aspectRatio}...`);
             
             // Create a shorter, more concise prompt that fits within 1024 character limit
-            const promptTemplate = `Photorealistic outpainting: extend the central photo by filling transparent areas seamlessly. Match the image perfectly. Ignore checkerboard patterns - fill transparent pixels only. No borders or frames. Image context: ${description}`;
+            const promptTemplate = `Photorealistic outpainting: extend the central photo by filling transparent areas seamlessly. Match the image perfectly. Ignore checkerboard patterns - fill transparent pixels only. No borders or frames. Image context: \${description}`;
             
             const expandPrompt = buildPromptWithDescription(
               promptTemplate,
               imageDescription,
-              '${description}'
+              '\${description}'
             );
             
             const result = await editImageWithPrompt(compositeBase64, compositeMimeType, expandPrompt);

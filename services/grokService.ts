@@ -126,6 +126,9 @@ Respond ONLY with the image generation prompt, no other text.`
 
     // Step 3: Fetch the generated image and convert to base64
     const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      throw new Error(`Kunde inte hämta bilden från AI:n: ${imageResponse.status} ${imageResponse.statusText}`);
+    }
     const blob = await imageResponse.blob();
     const base64 = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
@@ -149,6 +152,10 @@ Respond ONLY with the image generation prompt, no other text.`
       const userFriendlyPrefixes = ["AI:n", "Din prompt", "Redigeringen blockerades", "Redigeringen stoppades"];
       if (userFriendlyPrefixes.some(p => error.message.startsWith(p))) {
         throw error;
+      }
+      // Check for network/fetch errors
+      if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+        throw new Error(`Kunde inte redigera bilden: Nätverksfel. Kontrollera din internetanslutning och API-nyckel.`);
       }
       throw new Error(`Kunde inte redigera bilden: ${error.message}`);
     }
@@ -203,6 +210,10 @@ export const generatePromptFromImage = async (
       const userFriendlyPrefixes = ["AI:n", "Bildanalysen blockerades", "Bildanalysen stoppades"];
       if (userFriendlyPrefixes.some(p => error.message.startsWith(p))) {
         throw error;
+      }
+      // Check for network/fetch errors
+      if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+        throw new Error(`Kunde inte analysera bilden: Nätverksfel. Kontrollera din internetanslutning och API-nyckel.`);
       }
       throw new Error(`Kunde inte analysera bilden: ${error.message}`);
     }
@@ -308,6 +319,9 @@ export const createImageFromMultiple = async (
 
     // Fetch and convert to base64
     const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      throw new Error(`Kunde inte hämta bilden från AI:n: ${imageResponse.status} ${imageResponse.statusText}`);
+    }
     const blob = await imageResponse.blob();
     const base64 = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
@@ -329,6 +343,10 @@ export const createImageFromMultiple = async (
     if (error instanceof Error) {
       if (error.message.startsWith("AI:n") || error.message.startsWith("Bildskapandet")) {
         throw error;
+      }
+      // Check for network/fetch errors
+      if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+        throw new Error(`Kunde inte skapa bilden: Nätverksfel. Kontrollera din internetanslutning och API-nyckel.`);
       }
       throw new Error(`Kunde inte skapa bilden: ${error.message}`);
     }
