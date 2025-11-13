@@ -216,6 +216,10 @@ export const inpaintImage = async (
       console.error("[inpaintImage] Error details:", JSON.stringify(error, null, 2));
     }
     if (error instanceof Error) {
+      // Check for network/fetch errors
+      if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+        throw new Error('Kunde inte ansluta till Hugging Face API. Kontrollera din internetanslutning och API-nyckel.');
+      }
       throw error;
     }
     throw new Error("Kunde inte utföra inpainting. Ett okänt fel inträffade.");
@@ -328,6 +332,10 @@ export const outpaintImage = async (
   } catch (error) {
     console.error("Error outpainting image with Hugging Face:", error);
     if (error instanceof Error) {
+      // Check for network/fetch errors
+      if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+        throw new Error('Kunde inte ansluta till Hugging Face API. Kontrollera din internetanslutning och API-nyckel.');
+      }
       throw error;
     }
     throw new Error("Kunde inte utföra outpainting. Ett okänt fel inträffade.");
@@ -394,6 +402,10 @@ export const generateImageFromText = async (
   } catch (error) {
     console.error("Error generating image from text with Hugging Face:", error);
     if (error instanceof Error) {
+      // Check for network/fetch errors
+      if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+        throw new Error('Kunde inte ansluta till Hugging Face API. Kontrollera din internetanslutning och API-nyckel.');
+      }
       throw error;
     }
     throw new Error("Kunde inte generera bild från text. Ett okänt fel inträffade.");
@@ -502,6 +514,10 @@ export const editImageWithPromptHF = async (
       console.error("[editImageWithPromptHF] Error details:", JSON.stringify(error, null, 2));
     }
     if (error instanceof Error) {
+      // Check for network/fetch errors
+      if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+        throw new Error('Kunde inte ansluta till Hugging Face API. Kontrollera din internetanslutning och API-nyckel.');
+      }
       throw error;
     }
     throw new Error("Kunde inte redigera bilden. Ett okänt fel inträffade.");
@@ -537,6 +553,10 @@ export const createImageFromMultiple = async (
   } catch (error) {
     console.error("Error creating fused image with Hugging Face:", error);
     if (error instanceof Error) {
+      // Check for network/fetch errors
+      if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+        throw new Error('Kunde inte ansluta till Hugging Face API. Kontrollera din internetanslutning och API-nyckel.');
+      }
       throw error;
     }
     throw new Error("Kunde inte skapa sammanslagen bild. Ett okänt fel inträffade.");
