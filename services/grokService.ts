@@ -4,13 +4,44 @@ import OpenAI from 'openai';
 // This replaces the expensive Gemini API with a more cost-effective and permissive solution
 // Grok has better support for fashion, swimwear, and creative content without over-filtering
 
+// Allow API key to be passed in or use environment variable
+let userApiKey: string | null = null;
+
+// Initialize from localStorage if available (browser environment)
+if (typeof window !== 'undefined') {
+  const storedKey = localStorage.getItem('xai_api_key');
+  if (storedKey) {
+    userApiKey = storedKey;
+  }
+}
+
+export const setApiKey = (apiKey: string) => {
+  userApiKey = apiKey;
+  // Also save to localStorage for persistence
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('xai_api_key', apiKey);
+  }
+};
+
+export const getApiKey = (): string | null => {
+  // Check localStorage first, then userApiKey, then environment
+  if (typeof window !== 'undefined') {
+    const storedKey = localStorage.getItem('xai_api_key');
+    if (storedKey) {
+      return storedKey;
+    }
+  }
+  return userApiKey || process.env.API_KEY || null;
+};
+
 const getGrokClient = () => {
-  if (!process.env.API_KEY) {
-    throw new Error("API_KEY environment variable not set.");
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    throw new Error("API_KEY not set. Please enter your xAI API key in settings.");
   }
   // Grok API uses OpenAI SDK format but with custom base URL
   return new OpenAI({ 
-    apiKey: process.env.API_KEY, 
+    apiKey: apiKey, 
     baseURL: 'https://api.x.ai/v1',
     dangerouslyAllowBrowser: true 
   });

@@ -5,11 +5,12 @@ import type { PixelCrop } from 'react-image-crop';
 import type { ImageFile, EditedImage, ImageSession } from './types';
 import { editImageWithPrompt, generatePromptFromImage, translateToEnglish } from './services/grokService';
 import { removeBackground } from './backgroundRemovalService';
-import { UploadIcon, SparklesIcon, DownloadIcon, ResetIcon, UndoIcon, RedoIcon, LightBulbIcon, EnhanceIcon, ExpandIcon, CropIcon, ZoomInIcon, RevertIcon, TrashIcon, RemoveBgIcon, ShieldIcon, ShareIcon } from './components/Icons';
+import { UploadIcon, SparklesIcon, DownloadIcon, ResetIcon, UndoIcon, RedoIcon, LightBulbIcon, EnhanceIcon, ExpandIcon, CropIcon, ZoomInIcon, RevertIcon, TrashIcon, RemoveBgIcon, ShieldIcon, ShareIcon, SettingsIcon } from './components/Icons';
 import CropModal, { getCroppedImg } from './components/CropModal';
 import ExpandModal from './components/ExpandModal';
 import ImageViewer from './components/ImageViewer';
 import ZoomModal from './components/ZoomModal';
+import SettingsModal from './components/SettingsModal';
 
 const AgeGate: React.FC<{ onConfirm: () => void }> = ({ onConfirm }) => {
     const [showNoMessage, setShowNoMessage] = useState(false);
@@ -122,6 +123,7 @@ const App: React.FC = () => {
     const [isCropping, setIsCropping] = useState(false);
     const [isExpanding, setIsExpanding] = useState(false);
     const [isZooming, setIsZooming] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     const activeSession = useMemo(() => sessions.find(s => s.id === activeSessionId), [sessions, activeSessionId]);
 
@@ -505,8 +507,16 @@ Use this analysis to ensure your generated content perfectly matches in terms of
             <main className="container mx-auto p-4 flex flex-col lg:flex-row gap-8">
                 {/* Control Panel */}
                 <div className="w-full lg:w-1/3 lg:max-w-md flex flex-col gap-6 order-2 lg:order-1">
-                    <header>
+                    <header className="relative">
                         <h1 className="text-3xl font-bold text-center" style={{ fontFamily: "'MedievalSharp', cursive" }}>Bella's Magic Editor</h1>
+                        <button
+                            onClick={() => setIsSettingsOpen(true)}
+                            className="absolute top-0 right-0 p-2 hover:bg-gray-700 rounded-full transition-colors"
+                            aria-label="Inställningar"
+                            title="API-inställningar"
+                        >
+                            <SettingsIcon className="w-6 h-6" />
+                        </button>
                     </header>
 
                     <div className="bg-gray-800 p-4 rounded-lg flex flex-col gap-4">
@@ -649,6 +659,11 @@ Use this analysis to ensure your generated content perfectly matches in terms of
                     imageSrc={`data:${currentImage.mimeType};base64,${currentImage.base64}`}
                     onZoomComplete={handleZoomComplete}
                     onClose={() => setIsZooming(false)}
+                />
+            )}
+            {isSettingsOpen && (
+                <SettingsModal
+                    onClose={() => setIsSettingsOpen(false)}
                 />
             )}
         </div>
