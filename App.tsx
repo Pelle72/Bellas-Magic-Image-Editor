@@ -3,7 +3,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import type { PixelCrop } from 'react-image-crop';
 
 import type { ImageFile, EditedImage, ImageSession } from './types';
-import { editImageWithPrompt, generatePromptFromImage, translateToEnglish } from './services/geminiService';
+import { editImageWithPrompt, generatePromptFromImage, translateToEnglish } from './services/grokService';
 import { removeBackground } from './backgroundRemovalService';
 import { UploadIcon, SparklesIcon, DownloadIcon, ResetIcon, UndoIcon, RedoIcon, LightBulbIcon, EnhanceIcon, ExpandIcon, CropIcon, ZoomInIcon, RevertIcon, TrashIcon, RemoveBgIcon, ShieldIcon, ShareIcon } from './components/Icons';
 import CropModal, { getCroppedImg } from './components/CropModal';

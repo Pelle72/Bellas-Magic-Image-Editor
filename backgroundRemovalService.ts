@@ -1,5 +1,5 @@
 
-import { editImageWithPrompt } from './services/geminiService';
+import { editImageWithPrompt } from './services/grokService';
 
 export const removeBackground = async (
   base64ImageData: string,
@@ -19,15 +19,15 @@ export const removeBackground = async (
     };
 
   } catch (error) {
-    console.error("Error removing background with Gemini:", error);
+    console.error("Error removing background:", error);
     if (error instanceof Error) {
-        // Re-throw user-friendly errors from geminiService
+        // Re-throw user-friendly errors from openaiService
         const userFriendlyPrefixes = ["AI:n", "Din prompt", "Redigeringen blockerades", "Redigeringen stoppades"];
         if (userFriendlyPrefixes.some(p => error.message.startsWith(p))) {
             throw error;
         }
-        throw new Error(`Fel vid bakgrundsborttagning med Gemini: ${error.message}`);
+        throw new Error(`Fel vid bakgrundsborttagning: ${error.message}`);
     }
-    throw new Error("Ett okänt fel inträffade vid bakgrundsborttagning med Gemini.");
+    throw new Error("Ett okänt fel inträffade vid bakgrundsborttagning.");
   }
 };
