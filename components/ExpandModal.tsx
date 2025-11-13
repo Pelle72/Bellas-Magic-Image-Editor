@@ -1,12 +1,13 @@
 
 import React, { useState } from 'react';
 
+// Supported aspect ratios based on xAI/OpenAI API generation limits
+// API supports: 1024x1024 (1:1), 1024x1536 (2:3), 1536x1024 (3:2)
+// Aspect ratios that fit within these dimensions without excessive distortion
 const ASPECT_RATIOS = [
     { value: '1:1', text: '1:1' },
     { value: '4:3', text: '4:3' },
     { value: '3:4', text: '3:4' },
-    { value: '16:9', text: '16:9' },
-    { value: '9:16', text: '9:16' },
     { value: '3:2', text: '3:2' },
     { value: '2:3', text: '2:3' },
 ];
