@@ -95,7 +95,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
               <strong>grok-4-fast-non-reason</strong> - Snabbast och billigast för enkla uppgifter
             </li>
             <li>
-              <strong>grok-imagine-4</strong> - För bildgenerering med "Spicy Mode"
+              <strong>grok-2-image-1212</strong> - För bildgenerering med "Spicy Mode"
             </li>
           </ul>
         </div>
