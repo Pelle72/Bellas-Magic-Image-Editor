@@ -214,6 +214,120 @@ Your response must be a single detailed generation prompt that will produce an i
   }
 };
 
+/**
+ * Analyze an image for editing purposes
+ * This provides detailed understanding of the image to guide precise edits
+ */
+export const analyzeImageForEditing = async (
+  base64ImageData: string,
+  mimeType: string,
+  userPrompt: string
+): Promise<string> => {
+  const client = getGrokClient();
+
+  try {
+    console.log('[analyzeImageForEditing] Analyzing image for editing...');
+    console.log('[analyzeImageForEditing] User edit request:', userPrompt);
+    const dataUrl = `data:${mimeType};base64,${base64ImageData}`;
+    
+    const response = await client.chat.completions.create({
+      model: "grok-4-fast-reasoning",
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: `You are an expert at creating precise image generation prompts that preserve the original image while applying specific edits.
+
+Analyze this image in EXTREME detail and create a generation prompt that will recreate this EXACT image with ONLY this modification: "${userPrompt}"
+
+CRITICAL REQUIREMENTS:
+1. Describe EVERY visual detail of the current image with photographic precision:
+   - Exact subject description (face, body, pose, expression, clothing, accessories)
+   - Precise composition and framing
+   - Specific lighting (direction, quality, shadows, highlights)
+   - Exact color palette and tones
+   - Background elements and their positions
+   - Style and medium (photo, painting, etc.)
+   - Camera angle and perspective
+   - Any text, logos, or distinctive features
+
+2. Apply ONLY the requested change: "${userPrompt}"
+   - Be surgical and precise - change ONLY what's explicitly requested
+   - Keep everything else EXACTLY as it appears in the original
+
+3. Output format:
+   - Start with a complete description of the original image
+   - Then specify the modification to apply
+   - Use clear, detailed language suitable for image generation
+
+Your response must be a detailed prompt for image generation. Respond ONLY with the generation prompt in English, no other text.`
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: dataUrl,
+                detail: "high"
+              }
+            }
+          ]
+        }
+      ],
+      max_tokens: 800,
+      temperature: 0.3
+    });
+
+    const generationPrompt = response.choices[0]?.message?.content?.trim();
+    
+    if (!generationPrompt) {
+      console.error('[analyzeImageForEditing] No prompt generated');
+      throw new Error("AI:n kunde inte skapa en redigeringsprompt.");
+    }
+    
+    console.log('[analyzeImageForEditing] Generated prompt:', generationPrompt);
+    return generationPrompt;
+    
+  } catch (error) {
+    console.error("[analyzeImageForEditing] Error analyzing image for editing:", error);
+    // Log full error details for debugging
+    if (error && typeof error === 'object') {
+      console.error("[analyzeImageForEditing] Error details:", JSON.stringify(error, null, 2));
+    }
+    
+    if (error instanceof Error) {
+      const userFriendlyPrefixes = ["AI:n", "Bildanalysen blockerades", "Bildanalysen stoppades"];
+      if (userFriendlyPrefixes.some(p => error.message.startsWith(p))) {
+        throw error;
+      }
+      
+      // Check for OpenAI SDK errors with more details
+      if ('status' in error || 'code' in error) {
+        const apiError = error as any;
+        if (apiError.status === 401) {
+          throw new Error(`Kunde inte analysera bilden: Ogiltig API-nyckel. Kontrollera din xAI API-nyckel i inställningarna.`);
+        }
+        if (apiError.status === 429) {
+          throw new Error(`Kunde inte analysera bilden: API-gräns överskriden. Vänta en stund och försök igen.`);
+        }
+        if (apiError.status === 400) {
+          throw new Error(`Kunde inte analysera bilden: Ogiltig förfrågan. ${apiError.message || ''}`);
+        }
+        if (apiError.status) {
+          throw new Error(`Kunde inte analysera bilden: API-fel (${apiError.status}). ${apiError.message || 'Försök igen.'}`);
+        }
+      }
+      
+      // Check for network/fetch errors
+      if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+        throw new Error(`Kunde inte analysera bilden: Nätverksfel. Kontrollera din internetanslutning och API-nyckel.`);
+      }
+      throw new Error(`Kunde inte analysera bilden: ${error.message}`);
+    }
+    throw new Error("Kunde inte analysera bilden. Ett okänt fel inträffade.");
+  }
+};
+
 export const generatePromptFromImage = async (
   base64ImageData: string,
   mimeType: string,
@@ -221,6 +335,7 @@ export const generatePromptFromImage = async (
   const client = getGrokClient();
 
   try {
+    console.log('[generatePromptFromImage] Analyzing image for outpainting...');
     const dataUrl = `data:${mimeType};base64,${base64ImageData}`;
     
     const response = await client.chat.completions.create({
@@ -249,17 +364,18 @@ export const generatePromptFromImage = async (
     const text = response.choices[0]?.message?.content?.trim();
     
     if (!text) {
-      console.warn("No text was generated.");
+      console.warn("[generatePromptFromImage] No text was generated.");
       throw new Error("AI:n kunde inte generera en beskrivning.");
     }
     
+    console.log('[generatePromptFromImage] Generated scene description:', text);
     return text;
     
   } catch (error) {
-    console.error("Error generating prompt from image:", error);
+    console.error("[generatePromptFromImage] Error generating prompt from image:", error);
     // Log full error details for debugging
     if (error && typeof error === 'object') {
-      console.error("Error details:", JSON.stringify(error, null, 2));
+      console.error("[generatePromptFromImage] Error details:", JSON.stringify(error, null, 2));
     }
     
     if (error instanceof Error) {
