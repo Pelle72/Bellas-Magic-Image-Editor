@@ -2,21 +2,25 @@
 
 This guide explains how to get a Hugging Face API key and provides information about NSFW-capable image generation models.
 
-## Quick Setup: Using NSFW XL (Default Configuration)
+## Quick Setup: Using SDXL Inpainting (Default Configuration)
 
-The app is **pre-configured** to use the **OmnigenXL NSFW/SFW** model, which provides excellent quality for all content types including NSFW. No additional configuration is needed beyond getting your API key!
+The app is **pre-configured** to use **SDXL Inpainting** for image editing and the **OmnigenXL NSFW/SFW** model for text-to-image generation. No additional configuration is needed beyond getting your API key!
 
 ### What's Already Configured
 
 The app automatically uses these models:
-- **Image Generation & Editing**: `stablediffusionapi/omnigenxl-nsfw-sfw`
-- **Inpainting**: `stablediffusionapi/omnigenxl-nsfw-sfw`
+- **Text-to-Image Generation**: `stablediffusionapi/omnigenxl-nsfw-sfw`
+- **Image Editing & Inpainting**: `diffusers/stable-diffusion-xl-1.0-inpainting-0.1`
+- **Outpainting**: `diffusers/stable-diffusion-xl-1.0-inpainting-0.1`
 
 These models are:
 - ✅ API-ready (no custom deployment needed)
 - ✅ High quality (SDXL-based)
-- ✅ NSFW-capable (unrestricted content)
+- ✅ Supports 1024x1024 resolution
 - ✅ Fast inference (optimized for Hugging Face)
+- ✅ Automatic image downscaling to fit model limits
+
+**Important**: Images are automatically downscaled to max 1024x1024 pixels (while preserving aspect ratio) before being sent to the API to prevent errors and ensure optimal quality.
 
 **You only need to get an API key to start using these models immediately!**
 
@@ -156,31 +160,32 @@ For high-quality image generation with NSFW/explicit content support, here are t
 
 ---
 
-## Using NSFW XL in This App
+## Using the App's Default Models
 
 ### ✅ Already Configured!
 
-The app is **already configured** to use **OmnigenXL NSFW/SFW** model. You don't need to change anything!
+The app is **already configured** to use the best models for each task. You don't need to change anything!
 
 **Current Configuration** (in `services/huggingFaceService.ts`):
 ```typescript
-// For image generation and editing
+// For text-to-image generation (NSFW-capable)
 const model = 'stablediffusionapi/omnigenxl-nsfw-sfw';
 
-// For inpainting
-const model = 'stablediffusionapi/omnigenxl-nsfw-sfw';
+// For inpainting and image editing
+const model = 'diffusers/stable-diffusion-xl-1.0-inpainting-0.1';
 ```
 
 ### How to Use
 
 1. **Get your Hugging Face API key** (see instructions above)
 2. **Enter it in Settings** (⚙️ icon)
-3. **Start creating!** The app automatically uses NSFW XL
+3. **Start creating!** The app automatically uses the optimal models
 
 ### What You Get
 
-✅ **Unrestricted content generation** - No safety filters blocking NSFW content
+✅ **Proper image editing** - Uses inpainting model that preserves original content except for prompted changes
 ✅ **High quality** - SDXL-based architecture for superior results
+✅ **Automatic image sizing** - Images are automatically downscaled to 1024x1024 max to fit model limits
 ✅ **Fast inference** - Optimized for Hugging Face Inference API
 ✅ **No additional setup** - Works immediately with your API key
 
@@ -193,18 +198,18 @@ However, if you want to monitor usage:
 2. View your **Inference API usage** and costs
 3. Set up billing alerts if desired
 
-### Optional: Using Different NSFW Models
+### Optional: Using Different Models
 
 If you want to try other models, edit `/services/huggingFaceService.ts`:
 
 ```typescript
-// Line ~96 (for inpainting):
-const model = 'stablediffusionapi/omnigenxl-nsfw-sfw';  // Current
+// Line ~162 (for inpainting and image editing):
+const model = 'diffusers/stable-diffusion-xl-1.0-inpainting-0.1';  // Current
 // Change to:
-const model = 'Kernel/sd-nsfw';  // Lightweight option
-// or search for other models on Hugging Face
+const model = 'stabilityai/stable-diffusion-2-inpainting';  // SD 2.0 option
+// or search for other inpainting models on Hugging Face
 
-// Line ~253 (for text-to-image):
+// Line ~351 (for text-to-image):
 const model = 'stablediffusionapi/omnigenxl-nsfw-sfw';  // Current
 // Change to your preferred model
 ```
