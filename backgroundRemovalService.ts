@@ -10,7 +10,7 @@ export const removeBackground = async (
     
     const result = await editImageWithPrompt(base64ImageData, mimeType, removeBgPrompt);
 
-    // The Gemini model is instructed to create a transparent PNG. We will trust the output
+    // The AI model is instructed to create a transparent PNG. We will trust the output
     // and set the mimeType to 'image/png' to ensure the browser handles it correctly as a transparent image
     // for download and further edits.
     return {
