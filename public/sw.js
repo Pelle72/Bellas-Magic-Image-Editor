@@ -1,10 +1,9 @@
 
-
-const CACHE_NAME = 'bella-magic-editor-v2';
+const CACHE_NAME = 'bella-magic-editor-v3';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
+  './',
+  './index.html',
+  './manifest.json',
   'https://cdn.tailwindcss.com',
   'https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap'
 ];
