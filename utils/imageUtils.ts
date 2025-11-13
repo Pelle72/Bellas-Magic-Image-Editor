@@ -6,6 +6,16 @@
 // Based on typical vision model limits, using 2048x2048 as safe maximum
 const MAX_IMAGE_DIMENSION = 2048;
 
+// Supported image generation sizes for xAI Grok API
+// Following OpenAI-compatible format
+const SUPPORTED_GENERATION_SIZES = [
+  { width: 1024, height: 1024 }, // 1:1 (square)
+  { width: 1024, height: 1536 }, // 2:3 (portrait)
+  { width: 1536, height: 1024 }, // 3:2 (landscape)
+] as const;
+
+type GenerationSize = '1024x1024' | '1024x1536' | '1536x1024';
+
 /**
  * Checks if an image exceeds maximum dimensions
  */
@@ -130,5 +140,40 @@ export const downscaleImage = (
     img.onerror = () => reject(new Error('Failed to load image for downscaling'));
 
     reader.readAsDataURL(file);
+  });
+};
+
+/**
+ * Determine the best image generation size based on input image dimensions
+ * Returns a size string compatible with xAI Grok API (e.g., "1024x1024")
+ */
+export const determineGenerationSize = (width: number, height: number): GenerationSize => {
+  const aspectRatio = width / height;
+  
+  // If image is roughly square (within 10% tolerance)
+  if (aspectRatio >= 0.9 && aspectRatio <= 1.1) {
+    return '1024x1024';
+  }
+  
+  // If image is portrait (taller than wide)
+  if (aspectRatio < 1.0) {
+    return '1024x1536';
+  }
+  
+  // If image is landscape (wider than tall)
+  return '1536x1024';
+};
+
+/**
+ * Get image dimensions from base64 data
+ */
+export const getImageDimensions = (base64Data: string, mimeType: string): Promise<{ width: number; height: number }> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    };
+    img.onerror = reject;
+    img.src = `data:${mimeType};base64,${base64Data}`;
   });
 };

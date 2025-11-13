@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { truncatePrompt } from '../utils/promptUtils';
+import { determineGenerationSize, getImageDimensions } from '../utils/imageUtils';
 
 // xAI Grok API service for AI image editing
 // This replaces the expensive Gemini API with a more cost-effective and permissive solution
@@ -104,6 +105,10 @@ Respond ONLY with the image generation prompt, no other text.`
     // Ensure the prompt doesn't exceed the 1024 character limit for image generation
     const truncatedPrompt = truncatePrompt(imagePrompt);
 
+    // Determine the appropriate output size based on input image dimensions
+    const dimensions = await getImageDimensions(base64ImageData, mimeType);
+    const generationSize = determineGenerationSize(dimensions.width, dimensions.height);
+
     // Step 2: Generate the edited image using Grok's image generation model
     // Note: Grok's image generation endpoint follows OpenAI's format
     // Note: The API does not support a 'style' parameter. Content policy is inherently
@@ -113,7 +118,7 @@ Respond ONLY with the image generation prompt, no other text.`
       model: "grok-2-image-1212",
       prompt: truncatedPrompt,
       n: 1,
-      size: "1024x1024"
+      size: generationSize
     });
 
     if (!response.data || response.data.length === 0) {
@@ -300,6 +305,10 @@ export const createImageFromMultiple = async (
     const fusionPrompt = `Create a single artistic image that fuses these concepts: ${fusionDescription}`;
     const truncatedFusionPrompt = truncatePrompt(fusionPrompt);
 
+    // Determine size based on the first image's dimensions (as a representative sample)
+    const firstImageDimensions = await getImageDimensions(images[0].base64, images[0].mimeType);
+    const generationSize = determineGenerationSize(firstImageDimensions.width, firstImageDimensions.height);
+
     // Now generate a new image based on this fusion description using Grok's image generation model
     // Note: The API does not support a 'style' parameter. Content policy is inherently
     // permissive for fashion, swimwear, and artistic content.
@@ -307,7 +316,7 @@ export const createImageFromMultiple = async (
       model: "grok-2-image-1212",
       prompt: truncatedFusionPrompt,
       n: 1,
-      size: "1024x1024"
+      size: generationSize
     });
 
     if (!generationResponse.data || generationResponse.data.length === 0) {
