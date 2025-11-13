@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { truncatePrompt } from '../utils/promptUtils';
 
 // xAI Grok API service for AI image editing
 // This replaces the expensive Gemini API with a more cost-effective and permissive solution
@@ -100,11 +101,14 @@ Respond ONLY with the image generation prompt, no other text.`
       throw new Error("AI:n kunde inte skapa en redigeringsprompt.");
     }
 
+    // Ensure the prompt doesn't exceed the 1024 character limit for image generation
+    const truncatedPrompt = truncatePrompt(imagePrompt);
+
     // Step 2: Generate the edited image using Grok's image generation model
     // Note: Grok's image generation endpoint follows OpenAI's format
     const response = await client.images.generate({
       model: "grok-2-image-1212",
-      prompt: imagePrompt,
+      prompt: truncatedPrompt,
       n: 1,
       // Grok supports 'spicy' mode for less restricted content
       // @ts-ignore - Grok-specific parameter
@@ -280,10 +284,14 @@ export const createImageFromMultiple = async (
       throw new Error("AI:n kunde inte analysera bilderna för sammanslagning.");
     }
 
+    // Ensure the fusion prompt doesn't exceed the 1024 character limit
+    const fusionPrompt = `Create a single artistic image that fuses these concepts: ${fusionDescription}`;
+    const truncatedFusionPrompt = truncatePrompt(fusionPrompt);
+
     // Now generate a new image based on this fusion description using Grok's image generation model
     const generationResponse = await client.images.generate({
       model: "grok-2-image-1212",
-      prompt: `Create a single artistic image that fuses these concepts: ${fusionDescription}`,
+      prompt: truncatedFusionPrompt,
       n: 1,
       // @ts-ignore - Grok-specific parameter for less restricted content
       style: "spicy"

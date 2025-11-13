@@ -11,6 +11,7 @@ import ExpandModal from './components/ExpandModal';
 import ImageViewer from './components/ImageViewer';
 import ZoomModal from './components/ZoomModal';
 import SettingsModal from './components/SettingsModal';
+import { buildPromptWithDescription } from './utils/promptUtils';
 
 const AgeGate: React.FC<{ onConfirm: () => void }> = ({ onConfirm }) => {
     const [showNoMessage, setShowNoMessage] = useState(false);
@@ -326,19 +327,14 @@ const App: React.FC = () => {
             
             setLoadingMessage(`AI expanderar bilden till ${aspectRatio}...`);
             
-            const expandPrompt = `You are a master digital artist specializing in photorealistic outpainting. The provided image is a composite: a central photograph is placed on a larger, fully transparent canvas. Your ONLY task is to intelligently fill the transparent areas to extend the central photograph into a seamless, larger picture.
-
-**Critical Instructions:**
-1.  **Identify Transparent Pixels:** The transparent areas are your canvas. You must fill ONLY these empty pixels.
-2.  **Ignore Placeholder Patterns:** The transparency may be visualized as a checkerboard pattern. COMPLETELY IGNORE this pattern. It is NOT part of the image. Your goal is to replace it.
-3.  **Seamless Integration:** The new content you generate MUST perfectly match the central image in every aspect.
-4.  **NO BORDERS:** Under no circumstances should you create any kind of frame, border, or edge around the original image. The transition must be invisible.
-
-**Image Context for Outpainting:**
-To guide you, here is a professional analysis of the central photograph's visual DNA:
-"${imageDescription}"
-
-Use this analysis to ensure your generated content perfectly matches in terms of lighting, style, color, and subject matter. The final output should be a single, coherent image with the same dimensions as the input canvas, but with all transparent areas realistically filled.`;
+            // Create a shorter, more concise prompt that fits within 1024 character limit
+            const promptTemplate = `Photorealistic outpainting: extend the central photo by filling transparent areas seamlessly. Match the image perfectly. Ignore checkerboard patterns - fill transparent pixels only. No borders or frames. Image context: ${description}`;
+            
+            const expandPrompt = buildPromptWithDescription(
+              promptTemplate,
+              imageDescription,
+              '${description}'
+            );
             
             const result = await editImageWithPrompt(compositeBase64, compositeMimeType, expandPrompt);
             addEditToHistory({ ...result, id: `expand-${Date.now()}` });
