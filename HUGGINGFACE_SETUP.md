@@ -9,9 +9,9 @@ The app is **pre-configured** to use **SDXL Inpainting** for image editing and t
 ### What's Already Configured
 
 The app automatically uses these models:
-- **Text-to-Image Generation**: `stablediffusionapi/omnigenxl-nsfw-sfw`
-- **Image Editing & Inpainting**: `diffusers/stable-diffusion-xl-1.0-inpainting-0.1`
-- **Outpainting**: `diffusers/stable-diffusion-xl-1.0-inpainting-0.1`
+- **Text-to-Image Generation**: `stablediffusionapi/omnigenxl-nsfw-sfw` (NSFW-capable)
+- **Image Editing & Inpainting**: `diffusers/stable-diffusion-xl-1.0-inpainting-0.1` (safety checker disabled)
+- **Outpainting**: `diffusers/stable-diffusion-xl-1.0-inpainting-0.1` (safety checker disabled)
 
 These models are:
 - ✅ API-ready (no custom deployment needed)
@@ -19,8 +19,11 @@ These models are:
 - ✅ Supports 1024x1024 resolution
 - ✅ Fast inference (optimized for Hugging Face)
 - ✅ Automatic image downscaling to fit model limits
+- ✅ **NSFW content enabled** (safety checker disabled for inpainting)
 
-**Important**: Images are automatically downscaled to max 1024x1024 pixels (while preserving aspect ratio) before being sent to the API to prevent errors and ensure optimal quality.
+**Important**: 
+- Images are automatically downscaled to max 1024x1024 pixels (while preserving aspect ratio) before being sent to the API to prevent errors and ensure optimal quality.
+- **NSFW content is fully supported**: The safety checker is disabled for inpainting/editing operations to allow unrestricted creative freedom.
 
 **You only need to get an API key to start using these models immediately!**
 
@@ -186,6 +189,7 @@ const model = 'diffusers/stable-diffusion-xl-1.0-inpainting-0.1';
 ✅ **Proper image editing** - Uses inpainting model that preserves original content except for prompted changes
 ✅ **High quality** - SDXL-based architecture for superior results
 ✅ **Automatic image sizing** - Images are automatically downscaled to 1024x1024 max to fit model limits
+✅ **NSFW content enabled** - Safety checker is disabled to allow unrestricted creative freedom
 ✅ **Fast inference** - Optimized for Hugging Face Inference API
 ✅ **No additional setup** - Works immediately with your API key
 
