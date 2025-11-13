@@ -3,13 +3,18 @@
 // - Grok 4: Excellent image analysis and understanding
 // - Hugging Face: Superior image generation, inpainting, and outpainting
 
-import { generatePromptFromImage as grokAnalyzeImage, translateToEnglish } from './grokService';
+import { 
+  analyzeImageForEditing, 
+  generatePromptFromImage as grokAnalyzeImage, 
+  translateToEnglish 
+} from './grokService';
 import { editImageWithPromptHF, generateImageFromText, createImageFromMultiple as hfCreateFromMultiple } from './huggingFaceService';
 
 /**
  * Edit an image using hybrid approach:
- * 1. Grok analyzes the image and creates a detailed generation prompt
- * 2. Hugging Face generates the edited image
+ * 1. Grok analyzes the image and understands the user's edit request
+ * 2. Creates a detailed generation prompt
+ * 3. Hugging Face generates the edited image using inpainting
  * 
  * This provides better results than Grok-only (which generates new images)
  * while maintaining Grok's excellent image understanding
@@ -23,23 +28,21 @@ export const editImageWithPrompt = async (
     console.log('[Hybrid editImageWithPrompt] Starting hybrid image editing...');
     console.log('[Hybrid editImageWithPrompt] User prompt:', userPrompt);
     
-    // Step 1: Use Grok to analyze the image in detail
-    console.log('[Hybrid editImageWithPrompt] Step 1: Analyzing image with Grok-4...');
-    const imageAnalysis = await grokAnalyzeImage(base64ImageData, mimeType);
+    // Step 1: Use Grok to analyze the image and create a detailed generation prompt
+    // This new function is specifically designed for editing, not outpainting
+    console.log('[Hybrid editImageWithPrompt] Step 1: Analyzing image and creating edit prompt with Grok-4...');
+    const generationPrompt = await analyzeImageForEditing(base64ImageData, mimeType, userPrompt);
     
-    // Step 2: Create a comprehensive prompt combining analysis and user request
-    console.log('[Hybrid editImageWithPrompt] Step 2: Creating generation prompt...');
-    const generationPrompt = `${imageAnalysis}. Make this modification: ${userPrompt}. Maintain all other aspects of the original image exactly as they are.`;
-    
-    // Step 3: Use Hugging Face to edit the image
-    console.log('[Hybrid editImageWithPrompt] Step 3: Generating edited image with Hugging Face...');
+    // Step 2: Use Hugging Face to edit the image with the generated prompt
+    console.log('[Hybrid editImageWithPrompt] Step 2: Generating edited image with Hugging Face...');
+    console.log('[Hybrid editImageWithPrompt] Generation prompt:', generationPrompt);
     const result = await editImageWithPromptHF(base64ImageData, mimeType, generationPrompt);
     
     console.log('[Hybrid editImageWithPrompt] Hybrid editing completed successfully');
     return result;
 
   } catch (error) {
-    console.error("Error in hybrid image editing:", error);
+    console.error("[Hybrid editImageWithPrompt] Error in hybrid image editing:", error);
     if (error instanceof Error) {
       throw error;
     }
@@ -82,4 +85,4 @@ export const createImageFromMultiple = async (
 };
 
 // Re-export functions that only use Grok (these are analysis-only, not generation)
-export { generatePromptFromImage, translateToEnglish } from './grokService';
+export { generatePromptFromImage, translateToEnglish, analyzeImageForEditing } from './grokService';

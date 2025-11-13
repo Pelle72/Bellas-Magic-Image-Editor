@@ -81,10 +81,13 @@ export const inpaintImage = async (
   try {
     console.log('[inpaintImage] Starting inpainting with Hugging Face...');
     console.log('[inpaintImage] Prompt:', prompt);
+    console.log('[inpaintImage] Model: stablediffusionapi/omnigenxl-nsfw-sfw');
 
     // Convert base64 images to Blobs
     const imageBlob = base64ToBlob(base64ImageData, mimeType);
     const maskBlob = base64ToBlob(base64MaskData, maskMimeType);
+    console.log('[inpaintImage] Image blob size:', imageBlob.size, 'bytes');
+    console.log('[inpaintImage] Mask blob size:', maskBlob.size, 'bytes');
 
     // Create FormData for multipart upload
     const formData = new FormData();
@@ -97,6 +100,7 @@ export const inpaintImage = async (
     const model = 'stablediffusionapi/omnigenxl-nsfw-sfw';
     const apiUrl = `https://api-inference.huggingface.co/models/${model}`;
 
+    console.log('[inpaintImage] Sending request to Hugging Face API...');
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -105,6 +109,7 @@ export const inpaintImage = async (
       body: formData
     });
 
+    console.log('[inpaintImage] Response status:', response.status);
     if (!response.ok) {
       const errorText = await response.text();
       console.error('[inpaintImage] API error:', response.status, errorText);
@@ -120,6 +125,7 @@ export const inpaintImage = async (
 
     // Response is image blob
     const resultBlob = await response.blob();
+    console.log('[inpaintImage] Result blob size:', resultBlob.size, 'bytes');
     const resultBase64 = await blobToBase64(resultBlob);
 
     console.log('[inpaintImage] Inpainting completed successfully');
@@ -129,7 +135,11 @@ export const inpaintImage = async (
     };
 
   } catch (error) {
-    console.error("Error inpainting image with Hugging Face:", error);
+    console.error("[inpaintImage] Error inpainting image with Hugging Face:", error);
+    // Log detailed error information for debugging
+    if (error && typeof error === 'object') {
+      console.error("[inpaintImage] Error details:", JSON.stringify(error, null, 2));
+    }
     if (error instanceof Error) {
       throw error;
     }
@@ -393,7 +403,11 @@ export const editImageWithPromptHF = async (
     return result;
 
   } catch (error) {
-    console.error("Error editing image with Hugging Face:", error);
+    console.error("[editImageWithPromptHF] Error editing image with Hugging Face:", error);
+    // Log detailed error information for debugging
+    if (error && typeof error === 'object') {
+      console.error("[editImageWithPromptHF] Error details:", JSON.stringify(error, null, 2));
+    }
     if (error instanceof Error) {
       throw error;
     }
