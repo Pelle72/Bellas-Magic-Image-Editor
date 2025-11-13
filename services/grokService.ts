@@ -121,20 +121,21 @@ Respond ONLY with the image generation prompt, no other text.`
     console.log('[editImageWithPrompt] Prompt being sent:', truncatedPrompt);
     
     // Try to generate the image with explicit error handling
+    // Use b64_json format to avoid CORS issues when fetching generated images
     let response;
     try {
       response = await client.images.generate({
-        model: "grok-2-image",  // Use the canonical model name
+        model: "grok-2-image-1212",
         prompt: truncatedPrompt,
         n: 1,
-        response_format: "url"
+        response_format: "b64_json"  // Use base64 to avoid CORS issues
       });
       console.log('[editImageWithPrompt] Image generation response received');
     } catch (genError: any) {
       console.error('[editImageWithPrompt] Image generation failed:', genError);
       // Provide more specific error message
       if (genError.status === 404) {
-        throw new Error("AI:n kunde inte generera bilden: Bildgenerering stöds inte av denna API-version. Kontrollera att din API-nyckel har tillgång till grok-2-image modellen.");
+        throw new Error("AI:n kunde inte generera bilden: Bildgenerering stöds inte av denna API-version. Kontrollera att din API-nyckel har tillgång till grok-2-image-1212 modellen.");
       }
       throw genError; // Re-throw to be caught by outer catch block
     }
@@ -143,33 +144,16 @@ Respond ONLY with the image generation prompt, no other text.`
       throw new Error("AI:n returnerade inget bildsvar. Prova en annan prompt.");
     }
 
-    const imageUrl = response.data[0].url;
-    if (!imageUrl) {
+    // Step 3: Extract base64 data from response
+    const b64Data = response.data[0].b64_json;
+    if (!b64Data) {
       throw new Error("AI:n kunde inte generera bilden. Försök igen.");
     }
 
-    console.log('[editImageWithPrompt] Step 3: Fetching generated image from URL...');
-    // Step 3: Fetch the generated image and convert to base64
-    const imageResponse = await fetch(imageUrl);
-    if (!imageResponse.ok) {
-      throw new Error(`Kunde inte hämta bilden från AI:n: ${imageResponse.status} ${imageResponse.statusText}`);
-    }
-    const blob = await imageResponse.blob();
-    console.log('[editImageWithPrompt] Image fetched, converting to base64...');
-    const base64 = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        resolve(result.split(',')[1]);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-
     console.log('[editImageWithPrompt] Image edit completed successfully');
     return {
-      base64,
-      mimeType: 'image/png'
+      base64: b64Data,
+      mimeType: 'image/jpeg'  // xAI generates JPEG format
     };
 
   } catch (error) {
@@ -376,41 +360,26 @@ export const createImageFromMultiple = async (
     // Note: The API does not support 'style', 'size', or 'quality' parameters.
     // Images are generated at the API's default resolution.
     // Content policy is inherently permissive for fashion, swimwear, and artistic content.
+    // Use b64_json format to avoid CORS issues when fetching generated images
     const generationResponse = await client.images.generate({
-      model: "grok-2-image",  // Use the canonical model name
+      model: "grok-2-image-1212",
       prompt: truncatedFusionPrompt,
       n: 1,
-      response_format: "url"
+      response_format: "b64_json"  // Use base64 to avoid CORS issues
     });
 
     if (!generationResponse.data || generationResponse.data.length === 0) {
       throw new Error("AI:n returnerade ett tomt svar.");
     }
 
-    const imageUrl = generationResponse.data[0].url;
-    if (!imageUrl) {
+    const b64Data = generationResponse.data[0].b64_json;
+    if (!b64Data) {
       throw new Error("AI:n kunde inte skapa bilden.");
     }
 
-    // Fetch and convert to base64
-    const imageResponse = await fetch(imageUrl);
-    if (!imageResponse.ok) {
-      throw new Error(`Kunde inte hämta bilden från AI:n: ${imageResponse.status} ${imageResponse.statusText}`);
-    }
-    const blob = await imageResponse.blob();
-    const base64 = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        resolve(result.split(',')[1]);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-
     return {
-      base64,
-      mimeType: 'image/png'
+      base64: b64Data,
+      mimeType: 'image/jpeg'  // xAI generates JPEG format
     };
 
   } catch (error) {
