@@ -27,7 +27,12 @@ This app uses an **intelligent hybrid strategy** that leverages the unique stren
 - **Cost**: $0.001-$0.02 per request (compute-time based)
 - **Resolution limits**: Auto-downscales to 1024px max dimension (preserves aspect ratio)
 
-**Note**: The app now uses the most reliable Stable Diffusion models that are guaranteed to work with the Hugging Face Inference API. For NSFW content support, you can modify the models in `services/huggingFaceService.ts`.
+**Note**: The app uses the most reliable Stable Diffusion models by default. 
+
+**Want higher quality and NSFW support?** 
+- Set up a [Custom Inference Endpoint](./CUSTOM_ENDPOINT_SETUP.md) ($0.60-$1.30/hour)
+- Enable SDXL (1024x1024) and NSFW XL models
+- Configure via Settings → Custom Inference Endpoint
 
 ### 🚀 Why This Combination?
 

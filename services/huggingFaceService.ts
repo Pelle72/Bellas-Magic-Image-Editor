@@ -5,11 +5,20 @@
 // API key management
 let userApiKey: string | null = null;
 
+// Custom inference endpoint management (optional)
+// If set, this will be used instead of the public Inference API
+// Format: https://your-endpoint.endpoints.huggingface.cloud
+let customEndpoint: string | null = null;
+
 // Initialize from localStorage if available (browser environment)
 if (typeof window !== 'undefined') {
   const storedKey = localStorage.getItem('hf_api_key');
   if (storedKey) {
     userApiKey = storedKey;
+  }
+  const storedEndpoint = localStorage.getItem('hf_custom_endpoint');
+  if (storedEndpoint) {
+    customEndpoint = storedEndpoint;
   }
 }
 
@@ -28,6 +37,42 @@ export const getHFApiKey = (): string | null => {
     }
   }
   return userApiKey ? userApiKey.trim() : (process.env.HF_API_KEY || null);
+};
+
+/**
+ * Set a custom Hugging Face Inference Endpoint URL
+ * This allows using dedicated endpoints with higher quality models like NSFW XL
+ * @param endpoint - Full URL of your custom endpoint (e.g., 'https://xxxxx.endpoints.huggingface.cloud')
+ */
+export const setHFCustomEndpoint = (endpoint: string) => {
+  customEndpoint = endpoint;
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('hf_custom_endpoint', endpoint);
+  }
+};
+
+/**
+ * Get the custom Hugging Face Inference Endpoint URL if set
+ * @returns The custom endpoint URL or null if using public API
+ */
+export const getHFCustomEndpoint = (): string | null => {
+  if (typeof window !== 'undefined') {
+    const storedEndpoint = localStorage.getItem('hf_custom_endpoint');
+    if (storedEndpoint) {
+      return storedEndpoint.trim();
+    }
+  }
+  return customEndpoint;
+};
+
+/**
+ * Clear the custom endpoint and revert to public Inference API
+ */
+export const clearHFCustomEndpoint = () => {
+  customEndpoint = null;
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('hf_custom_endpoint');
+  }
 };
 
 // Helper to convert base64 to Blob
@@ -245,14 +290,22 @@ export const inpaintImage = async (
 
     // Use Stable Diffusion Inpainting model
     // Using SD 1.5 inpainting as it's the most reliable and accessible via Inference API
+    // If using a custom endpoint, you can use higher quality models like SDXL
     const model = 'runwayml/stable-diffusion-inpainting';  // Most reliable
     
-    // Alternative models (uncomment to use):
-    // const model = 'diffusers/stable-diffusion-xl-1.0-inpainting-0.1';  // SDXL inpainting (may have CORS issues)
+    // Alternative models (uncomment to use with custom endpoint):
+    // const model = 'diffusers/stable-diffusion-xl-1.0-inpainting-0.1';  // SDXL inpainting (requires custom endpoint)
     // const model = 'stabilityai/stable-diffusion-2-inpainting';          // SD 2.0 inpainting
     
     console.log('[inpaintImage] Model:', model);
-    const apiUrl = `https://api-inference.huggingface.co/models/${model}`;
+    
+    // Check if custom endpoint is configured
+    const customEndpoint = getHFCustomEndpoint();
+    const apiUrl = customEndpoint 
+      ? customEndpoint  // Use custom endpoint directly
+      : `https://api-inference.huggingface.co/models/${model}`;  // Use public API with model
+    
+    console.log('[inpaintImage] API URL:', customEndpoint ? 'Custom Endpoint' : apiUrl);
 
     // Create FormData for multipart upload
     const formData = new FormData();
@@ -471,15 +524,21 @@ export const generateImageFromText = async (
 
     // Use Stable Diffusion model for text-to-image generation
     // Using SD 1.5 as it's the most reliable and widely accessible model via Inference API
-    // For NSFW content, users can uncomment one of the alternative models below
+    // If using a custom endpoint, you can use higher quality NSFW models
     const model = 'runwayml/stable-diffusion-v1-5';  // Most reliable, always accessible
     
-    // Alternative models (uncomment to use):
-    // const model = 'stablediffusionapi/omnigenxl-nsfw-sfw';  // Original NSFW model (may have CORS issues)
+    // Alternative models (uncomment to use with custom endpoint):
+    // const model = 'stablediffusionapi/omnigenxl-nsfw-sfw';  // NSFW XL (requires custom endpoint)
     // const model = 'stabilityai/stable-diffusion-2-1';        // SD 2.1 (good quality)
     // const model = 'CompVis/stable-diffusion-v1-4';           // SD 1.4 (older but reliable)
     
-    const apiUrl = `https://api-inference.huggingface.co/models/${model}`;
+    // Check if custom endpoint is configured
+    const customEndpoint = getHFCustomEndpoint();
+    const apiUrl = customEndpoint 
+      ? customEndpoint  // Use custom endpoint directly
+      : `https://api-inference.huggingface.co/models/${model}`;  // Use public API with model
+    
+    console.log('[generateImageFromText] API URL:', customEndpoint ? 'Custom Endpoint' : apiUrl);
 
     console.log('[generateImageFromText] Sending request to Hugging Face API...');
     console.log('[generateImageFromText] API URL:', apiUrl);
