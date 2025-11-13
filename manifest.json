@@ -1,0 +1,35 @@
+{
+  "name": "Bellas Magic Image Editor",
+  "short_name": "Bella Editor",
+  "description": "An app to edit images using text prompts with AI. Upload your images, describe the changes you want, and download the results as transparent PNGs. Perfect for creating stickers and quick edits. The app is in Swedish.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#111827",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3Ryb2tlPSIjYjA4NGYyIiBzdHJva2Utd2lkdGg9IjEuNSI+PHBhdGggc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNOS42NjMgMy4xMDNhMS41IDEuNSAwIDAxMi42NzQgMGwxLjMyNSAyLjY4NmExLjUgMS41IDAgMDAxLjQxLjkxMmwzLjI4LjI5MmExLjUgMS41IDAgMDEgMS4xMyAyLjQzbC0yLjI0IDIuNzQ0YTEuNSAxLjUgMCAwMC0uNDQgMS42NDJsLjgyIDMuNDI0YTEuNSAxLjUgMCAwMS0yLjE4OCAxLjY5M2wtMy4wMDQtMS40N2ExLjUgMS41IDAgMDAtMS42NTggMGwtMy4wMDQgMS40N2ExLjUgMS41IDAgMDEtMi4xODgtMS42OTNsLjgyLTMuNDI0YTEuNSAxLjUgMCAwMC0uNDQtMS42NDJsLTIuMjQtMi43NDRhMS41IDEuNSAwIDAxMS4xMy0yLjQzbDMuMjgtLjI5MmExLjUgMS41IDAgMDAxLjQxLS45MTJsMS4zMjUtMi42ODZ6IiAvPjxwYXRoIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTUgM3Y0TTMgNWg0bTEwLTJ2NG0zLTJoLTQiIC8+PC9zdmc+",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3Ryb2tlPSIjYjA4NGYyIiBzdHJva2Utd2lkdGg9IjEuNSI+PHBhdGggc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNOS42NjMgMy4xMDNhMS41IDEuNSAwIDAxMi42NzQgMGwxLjMyNSAyLjY4NmExLjUgMS41IDAgMDAxLjQxLjkxMmwzLjI4LjI5MmExLjUgMS41IDAgMDEgMS4xMyAyLjQzbC0yLjI0IDIuNzQ0YTEuNSAxLjUgMCAwMC0uNDQgMS42NDJsLjgyIDMuNDI0YTEuNSAxLjUgMCAwMS0yLjE4OCAxLjY5M2wtMy4wMDQtMS40N2ExLjUgMS41IDAgMDAtMS42NTggMGwtMy4wMDQgMS40N2ExLjUgMS41IDAgMDEtMi4xODgtMS42OTNsLjgyLTMuNDI0YTEuNSAxLjUgMCAwMC0uNDQtMS42NDJsLTIuMjQtMi43NDRhMS41IDEuNSAwIDAxMS4xMy0yLjQzbDMuMjgtLjI5MmExLjUgMS41IDAgMDAxLjQxLS45MTJsMS4zMjUtMi42ODZ6IiAvPjxwYXRoIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTUgM3Y0TTMgNWg0bTEwLTJ2NG0zLTJoLTQiIC8+PC9zdmc+",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+     {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3Ryb2tlPSIjYjA4NGYyIiBzdHJva2Utd2lkdGg9IjEuNSI+PHBhdGggc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNOS42NjMgMy4xMDNhMS41IDEuNSAwIDAxMi42NzQgMGwxLjMyNSAyLjY4NmExLjUgMS41IDAgMDAxLjQxLjkxMmwzLjI4LjI5MmExLjUgMS41IDAgMDEgMS4xMyAyLjQzbC0yLjI0IDIuNzQ0YTEuNSAxLjUgMCAwMC0uNDQgMS42NDJsLjgyIDMuNDI0YTEuNSAxLjUgMCAwMS0yLjE4OCAxLjY5M2wtMy4wMDQtMS40N2ExLjUgMS41IDAgMDAtMS42NTggMGwtMy4wMDQgMS40N2ExLjUgMS41IDAgMDEtMi4xODgtMS42OTNsLjgyLTMuNDI0YTEuNSAxLjUgMCAwMC0uNDQtMS42NDJsLTIuMjQtMi43NDRhMS41IDEuNSAwIDAxMS4xMy0yLjQzbDMuMjgtLjI5MmExLjUgMS41IDAgMDAxLjQxLS45MTJsMS4zMjUtMi42ODZ6IiAvPjxwYXRoIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTUgM3Y0TTMgNWg0bTEwLTJ2NG0zLTJoLTQiIC8+PC9zdmc+",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    },
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3Ryb2tlPSIjYjA4NGYyIiBzdHJva2Utd2lkdGg9IjEuNSI+PHBhdGggc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNOS42NjMgMy4xMDNhMS41IDEuNSAwIDAxMi42NzQgMGwxLjMyNSAyLjY4NmExLjUgMS41IDAgMDAxLjQxLjkxMmwzLjI4LjI5MmExLjUgMS41IDAgMDEgMS4xMyAyLjQzbC0yLjI0IDIuNzQ0YTEuNSAxLjUgMCAwMC0uNDQgMS42NDJsLjgyIDMuNDI0YTEuNSAxLjUgMCAwMS0yLjE4OCAxLjY5M2wtMy4wMDQtMS40N2ExLjUgMS41IDAgMDAtMS42NTggMGwtMy4wMDQgMS40N2ExLjUgMS41IDAgMDEtMi4xODgtMS42OTNsLjgyLTMuNDI0YTEuNSAxLjUgMCAwMC0uNDQtMS42NDJsLTIuMjQtMi43NDRhMS41IDEuNSAwIDAxMS4xMy0yLjQzbDMuMjgtLjI5MmExLjUgMS41IDAgMDAxLjQxLS45MTJsMS4zMjUtMi42ODZ6IiAvPjxwYXRoIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTUgM3Y0TTMgNWg0bTEwLTJ2NG0zLTJoLTQiIC8+PC9zdmc+",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

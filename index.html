@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="sv">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Bellas Magic Image Editor</title>
+    
+    <!-- PWA and Mobile-focus additions -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#111827" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Bella Editor">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/react-image-crop/dist/ReactCrop.css" />
+    <style>
+      body {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        overscroll-behavior: none;
+      }
+      .checkerboard-bg {
+        background-color: #1f2937;
+        background-image:
+          linear-gradient(45deg, #374151 25%, transparent 25%),
+          linear-gradient(-45deg, #374151 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, #374151 75%),
+          linear-gradient(-45deg, transparent 75%, #374151 75%);
+        background-size: 20px 20px;
+        background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+      }
+      .neon-text {
+        font-family: 'MedievalSharp', cursive;
+        color: #fff;
+        font-size: 4.5rem;
+        line-height: 1.2;
+        text-align: center;
+        text-shadow:
+          0 0 5px #fff,
+          0 0 10px #fff,
+          0 0 20px #ff00de,
+          0 0 30px #ff00de,
+          0 0 40px #ff00de,
+          0 0 55px #ff00de,
+          0 0 75px #ff00de;
+        animation: flicker 2s infinite alternate;
+      }
+
+      @keyframes flicker {
+        0%, 18%, 22%, 25%, 53%, 57%, 100% {
+          text-shadow:
+            0 0 5px #fff,
+            0 0 10px #fff,
+            0 0 20px #ff00de,
+            0 0 30px #ff00de,
+            0 0 40px #ff00de,
+            0 0 55px #ff00de,
+            0 0 75px #ff00de;
+        }
+        20%, 24%, 55% {       
+          text-shadow: none;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .neon-text {
+          font-size: 2.8rem;
+        }
+      }
+      .no-touch-actions {
+        touch-action: none;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react-image-crop": "https://esm.sh/react-image-crop@11.0.5?external=react",
+    "react-zoom-pan-pinch": "https://esm.sh/react-zoom-pan-pinch@3.6.1?external=react"
+  }
+}
+</script>
+</head>
+  <body class="bg-gray-900 text-white">
+    <div id="root"></div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then(registration => {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+          }, err => {
+            console.log('ServiceWorker registration failed: ', err);
+          });
+        });
+      }
+    </script>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

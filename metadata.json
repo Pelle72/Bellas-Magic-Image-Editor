@@ -1,0 +1,7 @@
+{
+  "name": "Bellas Magic Image Editor",
+  "description": "An app to edit images using text prompts with AI. Upload your images, describe the changes you want, and download the results as transparent PNGs. Perfect for creating stickers and quick edits. The app is in Swedish.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
