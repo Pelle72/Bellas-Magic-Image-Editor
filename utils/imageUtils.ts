@@ -146,7 +146,11 @@ export const downscaleImage = (
 
 /**
  * Determine the best image generation size based on input image dimensions
- * Returns a size string compatible with xAI Grok API (e.g., "1024x1024")
+ * Returns a size string compatible with OpenAI-style APIs (e.g., "1024x1024")
+ * 
+ * NOTE: This function is currently NOT used by xAI Grok API, as the xAI API
+ * does not support the 'size' parameter. Images are generated at the API's default resolution.
+ * This function is kept for potential future use or compatibility with other APIs.
  */
 export const determineGenerationSize = (width: number, height: number): GenerationSize => {
   const aspectRatio = width / height;
@@ -290,4 +294,123 @@ export const downscaleCanvasForAPI = (sourceCanvas: HTMLCanvasElement): HTMLCanv
   ctx.drawImage(sourceCanvas, 0, 0, constrainedDimensions.width, constrainedDimensions.height);
   
   return newCanvas;
+};
+
+/**
+ * Calculate target dimensions for a given aspect ratio
+ * Returns dimensions optimized for xAI Grok image generation capabilities.
+ * 
+ * Based on xAI Grok's typical output dimensions:
+ * - Maximum dimension: 1792 pixels on the long edge
+ * - Common outputs: 1024×1024 (1:1), 1792×1024 (16:9), 1024×1792 (9:16), 1024×768 (4:3)
+ * 
+ * This function calculates dimensions that maximize quality within these constraints
+ * while maintaining the exact aspect ratio requested.
+ */
+export const calculateAspectRatioDimensions = (aspectRatio: string): { width: number; height: number } => {
+  const [ratioW, ratioH] = aspectRatio.split(':').map(Number);
+  const targetRatio = ratioW / ratioH;
+  
+  // Maximum dimension supported by xAI Grok (based on research of actual outputs)
+  const MAX_DIMENSION = 1792;
+  // Standard base size for most common aspect ratios
+  const BASE_SIZE = 1024;
+  
+  let width: number, height: number;
+  
+  if (targetRatio >= 1) {
+    // Landscape or square: width is the longer dimension
+    // Use larger dimension for wider aspect ratios to maximize quality
+    if (targetRatio >= 1.5) {
+      // Wide landscape (e.g., 3:2, 16:9) - use max dimension
+      width = MAX_DIMENSION;
+      height = Math.round(MAX_DIMENSION / targetRatio);
+    } else {
+      // Closer to square (e.g., 1:1, 4:3) - use base size
+      width = BASE_SIZE;
+      height = Math.round(BASE_SIZE / targetRatio);
+    }
+  } else {
+    // Portrait: height is the longer dimension
+    // Use larger dimension for taller aspect ratios to maximize quality
+    if (targetRatio <= 0.67) {
+      // Tall portrait (e.g., 2:3, 9:16) - use max dimension
+      height = MAX_DIMENSION;
+      width = Math.round(MAX_DIMENSION * targetRatio);
+    } else {
+      // Closer to square (e.g., 3:4) - use base size
+      height = BASE_SIZE;
+      width = Math.round(BASE_SIZE * targetRatio);
+    }
+  }
+  
+  return { width, height };
+};
+
+/**
+ * Resize an image (from base64) to specific dimensions while maintaining aspect ratio
+ * The image will be scaled to cover the target dimensions, then cropped to fit exactly
+ */
+export const resizeImageToAspectRatio = async (
+  base64Data: string,
+  mimeType: string,
+  targetWidth: number,
+  targetHeight: number
+): Promise<{ base64: string; mimeType: string }> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const sourceWidth = img.naturalWidth;
+      const sourceHeight = img.naturalHeight;
+      const sourceRatio = sourceWidth / sourceHeight;
+      const targetRatio = targetWidth / targetHeight;
+      
+      // Calculate dimensions to fill the target while maintaining aspect ratio
+      let drawWidth: number, drawHeight: number;
+      let offsetX = 0, offsetY = 0;
+      
+      if (sourceRatio > targetRatio) {
+        // Source is wider - fit to height, crop width
+        drawHeight = targetHeight;
+        drawWidth = sourceWidth * (targetHeight / sourceHeight);
+        offsetX = -(drawWidth - targetWidth) / 2;
+      } else {
+        // Source is taller - fit to width, crop height
+        drawWidth = targetWidth;
+        drawHeight = sourceHeight * (targetWidth / sourceWidth);
+        offsetY = -(drawHeight - targetHeight) / 2;
+      }
+      
+      // Create canvas with target dimensions
+      const canvas = document.createElement('canvas');
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Could not get canvas context for resizing'));
+        return;
+      }
+      
+      // Use high-quality image smoothing
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      
+      // Draw the image scaled and centered
+      ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+      
+      // Convert to base64
+      const quality = mimeType === 'image/jpeg' ? 0.92 : undefined;
+      try {
+        const dataUrl = canvas.toDataURL(mimeType, quality);
+        const base64 = dataUrl.split(',')[1];
+        resolve({ base64, mimeType });
+      } catch (error) {
+        reject(error);
+      }
+    };
+    
+    img.onerror = () => reject(new Error('Failed to load image for resizing'));
+    img.src = `data:${mimeType};base64,${base64Data}`;
+  });
 };

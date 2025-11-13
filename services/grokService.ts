@@ -1,6 +1,5 @@
 import OpenAI from 'openai';
 import { truncatePrompt } from '../utils/promptUtils';
-import { determineGenerationSize, getImageDimensions } from '../utils/imageUtils';
 
 // xAI Grok API service for AI image editing
 // This replaces the expensive Gemini API with a more cost-effective and permissive solution
@@ -105,20 +104,16 @@ Respond ONLY with the image generation prompt, no other text.`
     // Ensure the prompt doesn't exceed the 1024 character limit for image generation
     const truncatedPrompt = truncatePrompt(imagePrompt);
 
-    // Determine the appropriate output size based on input image dimensions
-    const dimensions = await getImageDimensions(base64ImageData, mimeType);
-    const generationSize = determineGenerationSize(dimensions.width, dimensions.height);
-
     // Step 2: Generate the edited image using Grok's image generation model
     // Note: Grok's image generation endpoint follows OpenAI's format
-    // Note: The API does not support a 'style' parameter. Content policy is inherently
-    // permissive for fashion, swimwear, and artistic content. Style preferences should
-    // be incorporated directly into the prompt text.
+    // Note: The API does not support 'style', 'size', or 'quality' parameters.
+    // Images are generated at the API's default resolution.
+    // Content policy is inherently permissive for fashion, swimwear, and artistic content.
+    // Style preferences should be incorporated directly into the prompt text.
     const response = await client.images.generate({
       model: "grok-2-image-1212",
       prompt: truncatedPrompt,
-      n: 1,
-      size: generationSize
+      n: 1
     });
 
     if (!response.data || response.data.length === 0) {
@@ -305,18 +300,14 @@ export const createImageFromMultiple = async (
     const fusionPrompt = `Create a single artistic image that fuses these concepts: ${fusionDescription}`;
     const truncatedFusionPrompt = truncatePrompt(fusionPrompt);
 
-    // Determine size based on the first image's dimensions (as a representative sample)
-    const firstImageDimensions = await getImageDimensions(images[0].base64, images[0].mimeType);
-    const generationSize = determineGenerationSize(firstImageDimensions.width, firstImageDimensions.height);
-
     // Now generate a new image based on this fusion description using Grok's image generation model
-    // Note: The API does not support a 'style' parameter. Content policy is inherently
-    // permissive for fashion, swimwear, and artistic content.
+    // Note: The API does not support 'style', 'size', or 'quality' parameters.
+    // Images are generated at the API's default resolution.
+    // Content policy is inherently permissive for fashion, swimwear, and artistic content.
     const generationResponse = await client.images.generate({
       model: "grok-2-image-1212",
       prompt: truncatedFusionPrompt,
-      n: 1,
-      size: generationSize
+      n: 1
     });
 
     if (!generationResponse.data || generationResponse.data.length === 0) {
