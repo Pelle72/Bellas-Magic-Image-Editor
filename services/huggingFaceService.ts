@@ -81,24 +81,99 @@ export const inpaintImage = async (
   try {
     console.log('[inpaintImage] Starting inpainting with Hugging Face...');
     console.log('[inpaintImage] Prompt:', prompt);
-    console.log('[inpaintImage] Model: stablediffusionapi/omnigenxl-nsfw-sfw');
+
+    // Load the image to check dimensions
+    const img = new Image();
+    img.src = `data:${mimeType};base64,${base64ImageData}`;
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = reject;
+    });
+
+    let processedImageData = base64ImageData;
+    let processedMimeType = mimeType;
+    let processedMaskData = base64MaskData;
+    let width = img.naturalWidth;
+    let height = img.naturalHeight;
+
+    // NSFW XL models have a 1024x1024 pixel limit
+    // Downscale if image exceeds this limit while preserving aspect ratio
+    const MAX_DIMENSION = 1024;
+    
+    if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+      console.log(`[inpaintImage] Image exceeds max dimension (${MAX_DIMENSION}px), downscaling...`);
+      console.log(`[inpaintImage] Original dimensions: ${width}x${height}`);
+      
+      // Calculate new dimensions while preserving aspect ratio
+      const aspectRatio = width / height;
+      if (width > height) {
+        width = MAX_DIMENSION;
+        height = Math.round(MAX_DIMENSION / aspectRatio);
+      } else {
+        height = MAX_DIMENSION;
+        width = Math.round(MAX_DIMENSION * aspectRatio);
+      }
+
+      // Downscale the image
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Kunde inte skapa canvas-kontext för nedskalning.');
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, width, height);
+
+      processedImageData = canvas.toDataURL('image/png').split(',')[1];
+      processedMimeType = 'image/png';
+
+      // Also downscale the mask to match
+      const maskImg = new Image();
+      maskImg.src = `data:${maskMimeType};base64,${base64MaskData}`;
+      await new Promise<void>((resolve, reject) => {
+        maskImg.onload = () => resolve();
+        maskImg.onerror = reject;
+      });
+
+      const maskCanvas = document.createElement('canvas');
+      maskCanvas.width = width;
+      maskCanvas.height = height;
+      const maskCtx = maskCanvas.getContext('2d');
+      if (!maskCtx) throw new Error('Kunde inte skapa mask canvas-kontext.');
+
+      maskCtx.imageSmoothingEnabled = true;
+      maskCtx.imageSmoothingQuality = 'high';
+      maskCtx.drawImage(maskImg, 0, 0, width, height);
+
+      processedMaskData = maskCanvas.toDataURL('image/png').split(',')[1];
+      
+      console.log(`[inpaintImage] Downscaled to ${width}x${height}`);
+    }
 
     // Convert base64 images to Blobs
-    const imageBlob = base64ToBlob(base64ImageData, mimeType);
-    const maskBlob = base64ToBlob(base64MaskData, maskMimeType);
+    const imageBlob = base64ToBlob(processedImageData, processedMimeType);
+    const maskBlob = base64ToBlob(processedMaskData, 'image/png');
     console.log('[inpaintImage] Image blob size:', imageBlob.size, 'bytes');
     console.log('[inpaintImage] Mask blob size:', maskBlob.size, 'bytes');
+
+    // Use SDXL Inpainting model which properly supports inpainting with image + mask
+    // The previous omnigenxl-nsfw-sfw model was text-to-image only and didn't support inpainting
+    // Safety checker is disabled to allow NSFW content generation
+    const model = 'diffusers/stable-diffusion-xl-1.0-inpainting-0.1';
+    console.log('[inpaintImage] Model:', model);
+    const apiUrl = `https://api-inference.huggingface.co/models/${model}`;
 
     // Create FormData for multipart upload
     const formData = new FormData();
     formData.append('inputs', prompt);
     formData.append('image', imageBlob, 'image.png');
-    formData.append('mask', maskBlob, 'mask.png');
-
-    // Use NSFW XL Inpainting model for better quality and unrestricted content
-    // This model provides superior results for all content types including NSFW
-    const model = 'stablediffusionapi/omnigenxl-nsfw-sfw';
-    const apiUrl = `https://api-inference.huggingface.co/models/${model}`;
+    formData.append('mask_image', maskBlob, 'mask.png');
+    // Disable safety checker to allow NSFW content
+    formData.append('parameters', JSON.stringify({
+      safety_checker: null,
+      requires_safety_checker: false
+    }));
 
     console.log('[inpaintImage] Sending request to Hugging Face API...');
     const response = await fetch(apiUrl, {
@@ -172,8 +247,25 @@ export const outpaintImage = async (
 
   try {
     console.log('[outpaintImage] Starting outpainting with Hugging Face...');
-    console.log('[outpaintImage] Target dimensions:', targetWidth, 'x', targetHeight);
+    console.log('[outpaintImage] Requested target dimensions:', targetWidth, 'x', targetHeight);
     console.log('[outpaintImage] Prompt:', prompt);
+
+    // Constrain target dimensions to 1024x1024 max (NSFW XL model limit)
+    const MAX_DIMENSION = 1024;
+    let constrainedWidth = targetWidth;
+    let constrainedHeight = targetHeight;
+    
+    if (targetWidth > MAX_DIMENSION || targetHeight > MAX_DIMENSION) {
+      const aspectRatio = targetWidth / targetHeight;
+      if (targetWidth > targetHeight) {
+        constrainedWidth = MAX_DIMENSION;
+        constrainedHeight = Math.round(MAX_DIMENSION / aspectRatio);
+      } else {
+        constrainedHeight = MAX_DIMENSION;
+        constrainedWidth = Math.round(MAX_DIMENSION * aspectRatio);
+      }
+      console.log(`[outpaintImage] Target dimensions exceed limit, constrained to ${constrainedWidth}x${constrainedHeight}`);
+    }
 
     // Load the original image to get its dimensions
     const img = new Image();
@@ -188,30 +280,30 @@ export const outpaintImage = async (
 
     // Create canvas for the expanded image with original centered
     const canvas = document.createElement('canvas');
-    canvas.width = targetWidth;
-    canvas.height = targetHeight;
+    canvas.width = constrainedWidth;
+    canvas.height = constrainedHeight;
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Kunde inte skapa canvas-kontext.');
 
     // Fill with white background
     ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, targetWidth, targetHeight);
+    ctx.fillRect(0, 0, constrainedWidth, constrainedHeight);
 
     // Center the original image
-    const offsetX = Math.floor((targetWidth - origWidth) / 2);
-    const offsetY = Math.floor((targetHeight - origHeight) / 2);
+    const offsetX = Math.floor((constrainedWidth - origWidth) / 2);
+    const offsetY = Math.floor((constrainedHeight - origHeight) / 2);
     ctx.drawImage(img, offsetX, offsetY);
 
     // Create mask (black = preserve original, white = outpaint)
     const maskCanvas = document.createElement('canvas');
-    maskCanvas.width = targetWidth;
-    maskCanvas.height = targetHeight;
+    maskCanvas.width = constrainedWidth;
+    maskCanvas.height = constrainedHeight;
     const maskCtx = maskCanvas.getContext('2d');
     if (!maskCtx) throw new Error('Kunde inte skapa mask canvas-kontext.');
 
     // Fill with white (areas to outpaint)
     maskCtx.fillStyle = '#FFFFFF';
-    maskCtx.fillRect(0, 0, targetWidth, targetHeight);
+    maskCtx.fillRect(0, 0, constrainedWidth, constrainedHeight);
 
     // Black rectangle where original image is (areas to preserve)
     maskCtx.fillStyle = '#000000';
@@ -344,12 +436,13 @@ export const editImageWithPromptHF = async (
     let processedBase64 = base64ImageData;
     let processedMimeType = mimeType;
 
-    // Maximum resolution constraint for AI enhancement
-    // Prevents excessive upscaling that could cause API errors or quality issues
-    const MAX_DIMENSION = 2048;
+    // NSFW XL models (used for inpainting) have a 1024x1024 pixel limit
+    // Must downscale to prevent API errors while preserving aspect ratio
+    const MAX_DIMENSION = 1024;
     
     if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
       console.log(`[editImageWithPromptHF] Image exceeds max dimension (${MAX_DIMENSION}px), downscaling...`);
+      console.log(`[editImageWithPromptHF] Original dimensions: ${width}x${height}`);
       
       // Calculate new dimensions while preserving aspect ratio
       const aspectRatio = width / height;
