@@ -177,3 +177,72 @@ export const getImageDimensions = (base64Data: string, mimeType: string): Promis
     img.src = `data:${mimeType};base64,${base64Data}`;
   });
 };
+
+/**
+ * Maximum dimensions for API generation
+ * Based on xAI/OpenAI API limits for image generation
+ */
+const MAX_GENERATION_DIMENSION = 1536;
+
+/**
+ * Downscale canvas dimensions to fit within API generation limits
+ * Returns new dimensions that fit within 1536x1536 while maintaining aspect ratio
+ */
+export const constrainToGenerationLimits = (width: number, height: number): { width: number; height: number } => {
+  // If already within limits, return as-is
+  if (width <= MAX_GENERATION_DIMENSION && height <= MAX_GENERATION_DIMENSION) {
+    return { width, height };
+  }
+
+  const aspectRatio = width / height;
+  
+  if (width > height) {
+    // Landscape: constrain width
+    return {
+      width: MAX_GENERATION_DIMENSION,
+      height: Math.round(MAX_GENERATION_DIMENSION / aspectRatio)
+    };
+  } else {
+    // Portrait or square: constrain height
+    return {
+      width: Math.round(MAX_GENERATION_DIMENSION * aspectRatio),
+      height: MAX_GENERATION_DIMENSION
+    };
+  }
+};
+
+/**
+ * Downscale a canvas to fit within API generation limits
+ * Returns a new canvas with the image downscaled if necessary
+ */
+export const downscaleCanvasForAPI = (sourceCanvas: HTMLCanvasElement): HTMLCanvasElement => {
+  const originalWidth = sourceCanvas.width;
+  const originalHeight = sourceCanvas.height;
+  
+  // Check if downscaling is needed
+  const constrainedDimensions = constrainToGenerationLimits(originalWidth, originalHeight);
+  
+  // If no downscaling needed, return original canvas
+  if (constrainedDimensions.width === originalWidth && constrainedDimensions.height === originalHeight) {
+    return sourceCanvas;
+  }
+  
+  // Create new canvas with constrained dimensions
+  const newCanvas = document.createElement('canvas');
+  newCanvas.width = constrainedDimensions.width;
+  newCanvas.height = constrainedDimensions.height;
+  
+  const ctx = newCanvas.getContext('2d');
+  if (!ctx) {
+    throw new Error('Could not get canvas context for downscaling');
+  }
+  
+  // Use high-quality image smoothing
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  
+  // Draw the downscaled image
+  ctx.drawImage(sourceCanvas, 0, 0, constrainedDimensions.width, constrainedDimensions.height);
+  
+  return newCanvas;
+};

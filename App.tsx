@@ -12,7 +12,7 @@ import ImageViewer from './components/ImageViewer';
 import ZoomModal from './components/ZoomModal';
 import SettingsModal from './components/SettingsModal';
 import { buildPromptWithDescription } from './utils/promptUtils';
-import { downscaleImage } from './utils/imageUtils';
+import { downscaleImage, downscaleCanvasForAPI } from './utils/imageUtils';
 
 const AgeGate: React.FC<{ onConfirm: () => void }> = ({ onConfirm }) => {
     const [showNoMessage, setShowNoMessage] = useState(false);
@@ -269,7 +269,9 @@ const App: React.FC = () => {
         setLoadingMessage('Förbättrar och skalar upp bilden...');
         setError(null);
         try {
-            const enhancePrompt = "Act as a professional photo restoration expert. Upscale this image to a significantly higher resolution (e.g., 2x or 4x) while simultaneously enhancing its quality. Focus on increasing sharpness, clarity, and detail without introducing artifacts. Correct any noise, improve lighting, and balance colors to make it look crisp and professional. The content and composition must remain identical to the original.";
+            // The API will generate at the maximum resolution it supports based on aspect ratio
+            // (1536x1024 for landscape, 1024x1536 for portrait, 1024x1024 for square)
+            const enhancePrompt = "Act as a professional photo restoration expert. Enhance this image to the highest quality possible. Focus on increasing sharpness, clarity, and detail without introducing artifacts. Correct any noise, improve lighting, and balance colors to make it look crisp and professional. The content and composition must remain identical to the original.";
             const result = await editImageWithPrompt(currentImage.base64, currentImage.mimeType, enhancePrompt);
             addEditToHistory({ ...result, id: `enhance-${Date.now()}` });
         } catch (err: any) {
@@ -328,7 +330,10 @@ const App: React.FC = () => {
             const dy = (H_new - H_orig) / 2;
             ctx.drawImage(image, dx, dy, W_orig, H_orig);
 
-            const compositeBase64 = canvas.toDataURL('image/png').split(',')[1];
+            // Downscale canvas if it exceeds API generation limits (max 1536px)
+            const finalCanvas = downscaleCanvasForAPI(canvas);
+
+            const compositeBase64 = finalCanvas.toDataURL('image/png').split(',')[1];
             const compositeMimeType = 'image/png';
             
             setLoadingMessage(`AI expanderar bilden till ${aspectRatio}...`);
