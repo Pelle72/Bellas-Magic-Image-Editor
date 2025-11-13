@@ -159,6 +159,7 @@ export const inpaintImage = async (
 
     // Use SDXL Inpainting model which properly supports inpainting with image + mask
     // The previous omnigenxl-nsfw-sfw model was text-to-image only and didn't support inpainting
+    // Safety checker is disabled to allow NSFW content generation
     const model = 'diffusers/stable-diffusion-xl-1.0-inpainting-0.1';
     console.log('[inpaintImage] Model:', model);
     const apiUrl = `https://api-inference.huggingface.co/models/${model}`;
@@ -168,6 +169,11 @@ export const inpaintImage = async (
     formData.append('inputs', prompt);
     formData.append('image', imageBlob, 'image.png');
     formData.append('mask_image', maskBlob, 'mask.png');
+    // Disable safety checker to allow NSFW content
+    formData.append('parameters', JSON.stringify({
+      safety_checker: null,
+      requires_safety_checker: false
+    }));
 
     console.log('[inpaintImage] Sending request to Hugging Face API...');
     const response = await fetch(apiUrl, {
