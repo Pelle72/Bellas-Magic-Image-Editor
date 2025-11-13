@@ -12,7 +12,7 @@ import ImageViewer from './components/ImageViewer';
 import ZoomModal from './components/ZoomModal';
 import SettingsModal from './components/SettingsModal';
 import { buildPromptWithDescription } from './utils/promptUtils';
-import { downscaleImage, downscaleCanvasForAPI, isAspectRatioUnsupported, getAspectRatioString, getImageDimensions } from './utils/imageUtils';
+import { downscaleImage, downscaleCanvasForAPI, isAspectRatioUnsupported, getAspectRatioString, getImageDimensions, calculateAspectRatioDimensions, resizeImageToAspectRatio } from './utils/imageUtils';
 import UnsupportedRatioModal from './components/UnsupportedRatioModal';
 
 const AgeGate: React.FC<{ onConfirm: () => void }> = ({ onConfirm }) => {
@@ -375,7 +375,19 @@ const App: React.FC = () => {
             );
             
             const result = await editImageWithPrompt(compositeBase64, compositeMimeType, expandPrompt);
-            addEditToHistory({ ...result, id: `expand-${Date.now()}` });
+            
+            // Since xAI API doesn't support custom aspect ratios, resize the generated image
+            // to match the desired aspect ratio
+            setLoadingMessage(`Anpassar bildstorlek till ${aspectRatio}...`);
+            const targetDimensions = calculateAspectRatioDimensions(aspectRatio);
+            const resizedResult = await resizeImageToAspectRatio(
+                result.base64,
+                result.mimeType,
+                targetDimensions.width,
+                targetDimensions.height
+            );
+            
+            addEditToHistory({ ...resizedResult, id: `expand-${Date.now()}` });
 
         } catch (err: any) {
             setError(err.message || "Ett okänt fel inträffade vid expandering.");
