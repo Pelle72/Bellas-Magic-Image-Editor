@@ -41,6 +41,86 @@ const base64ToBlob = (base64: string, mimeType: string): Blob => {
   return new Blob([byteArray], { type: mimeType });
 };
 
+/**
+ * Test Hugging Face API connectivity and authentication
+ * This function can be called from the browser console for debugging
+ */
+export const testHFConnection = async (): Promise<{success: boolean, message: string, details?: any}> => {
+  const apiKey = getHFApiKey();
+  if (!apiKey) {
+    return {
+      success: false,
+      message: 'No API key configured. Please set your HF API key in settings.'
+    };
+  }
+
+  try {
+    console.log('[testHFConnection] Testing connection to Hugging Face API...');
+    console.log('[testHFConnection] API key present:', !!apiKey);
+    console.log('[testHFConnection] API key format valid:', apiKey.startsWith('hf_'));
+    
+    // Test with a simple, well-known model that's always available
+    const testUrl = 'https://api-inference.huggingface.co/models/bert-base-uncased';
+    
+    const response = await fetch(testUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      mode: 'cors',
+      credentials: 'omit'
+    });
+
+    console.log('[testHFConnection] Response status:', response.status);
+    
+    if (response.ok) {
+      const data = await response.json();
+      return {
+        success: true,
+        message: 'Connection successful! Hugging Face API is accessible.',
+        details: {
+          status: response.status,
+          modelInfo: data
+        }
+      };
+    } else {
+      const errorText = await response.text();
+      return {
+        success: false,
+        message: `API returned error status ${response.status}`,
+        details: {
+          status: response.status,
+          error: errorText
+        }
+      };
+    }
+  } catch (error) {
+    console.error('[testHFConnection] Error:', error);
+    if (error instanceof Error) {
+      return {
+        success: false,
+        message: `Connection failed: ${error.message}`,
+        details: {
+          errorName: error.name,
+          errorMessage: error.message,
+          errorType: error.name === 'TypeError' ? 'Likely CORS or network issue' : 'Unknown error'
+        }
+      };
+    }
+    return {
+      success: false,
+      message: 'Unknown error occurred',
+      details: error
+    };
+  }
+};
+
+// Make testHFConnection available globally for console debugging
+if (typeof window !== 'undefined') {
+  (window as any).testHFConnection = testHFConnection;
+  console.log('[HF Service] testHFConnection() is available in console for debugging');
+}
+
 // Helper to convert Blob to base64
 const blobToBase64 = (blob: Blob): Promise<string> => {
   return new Promise((resolve, reject) => {
