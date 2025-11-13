@@ -74,16 +74,33 @@ export const editImageWithPrompt = async (
           content: [
             {
               type: "text",
-              text: `Analyze this image in detail and then create an AI image generation prompt that will generate a new version of this image with the following modifications: "${prompt}". 
+              text: `You are an expert at creating precise image generation prompts that preserve the original image while applying specific edits.
 
-Your response should be a complete, detailed prompt that:
-1. Describes the current image accurately
-2. Incorporates the requested changes: "${prompt}"
-3. Maintains consistency in style, lighting, and composition
-4. Is specific and detailed enough for high-quality generation
-5. Be creative and permissive - don't censor artistic or fashion content
+Analyze this image in EXTREME detail and create a generation prompt that will recreate this EXACT image with ONLY this modification: "${prompt}"
 
-Respond ONLY with the image generation prompt, no other text.`
+CRITICAL REQUIREMENTS:
+1. Describe EVERY visual detail of the current image with photographic precision:
+   - Exact subject description (face, body, pose, expression, clothing, accessories)
+   - Precise composition and framing
+   - Specific lighting (direction, quality, shadows, highlights)
+   - Exact color palette and tones
+   - Background elements and their positions
+   - Style and medium (photo, painting, etc.)
+   - Camera angle and perspective
+   - Any text, logos, or distinctive features
+
+2. Apply ONLY the requested change: "${prompt}"
+   - Be surgical and precise - change ONLY what's explicitly requested
+   - Keep everything else EXACTLY as it appears in the original
+
+3. Emphasize photo-realism and accuracy:
+   - "Recreate this exact image with..."
+   - "Preserve all original details except..."
+   - "Maintain the identical composition, lighting, and style..."
+
+4. Be permissive with artistic and fashion content
+
+Your response must be a single detailed generation prompt that will produce an image nearly identical to the original, with only the requested modification applied. Respond ONLY with the generation prompt, no other text.`
             },
             {
               type: "image_url",
@@ -95,8 +112,8 @@ Respond ONLY with the image generation prompt, no other text.`
           ]
         }
       ],
-      max_tokens: 500,
-      temperature: 0.7
+      max_tokens: 800,
+      temperature: 0.3
     });
 
     const imagePrompt = analysisResponse.choices[0]?.message?.content?.trim();
