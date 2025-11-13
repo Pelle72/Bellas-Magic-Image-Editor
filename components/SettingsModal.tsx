@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { KeyIcon } from './Icons';
 import { getApiKey, setApiKey } from '../services/grokService';
-import { getHFApiKey, setHFApiKey } from '../services/huggingFaceService';
+import { getHFApiKey, setHFApiKey, getHFCustomEndpoint, setHFCustomEndpoint, clearHFCustomEndpoint } from '../services/huggingFaceService';
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -10,6 +10,7 @@ interface SettingsModalProps {
 const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
   const [apiKey, setApiKeyLocal] = useState('');
   const [hfApiKey, setHFApiKeyLocal] = useState('');
+  const [hfCustomEndpoint, setHFCustomEndpointLocal] = useState('');
   const [showKey, setShowKey] = useState(false);
   const [showHFKey, setShowHFKey] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -25,10 +26,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     const storedHFKey = localStorage.getItem('hf_api_key');
     const currentHFKey = storedHFKey || getHFApiKey() || '';
     setHFApiKeyLocal(currentHFKey);
+    
+    const storedEndpoint = localStorage.getItem('hf_custom_endpoint');
+    const currentEndpoint = storedEndpoint || getHFCustomEndpoint() || '';
+    setHFCustomEndpointLocal(currentEndpoint);
   }, []);
 
   const handleSave = () => {
-    if (apiKey.trim() || hfApiKey.trim()) {
+    if (apiKey.trim() || hfApiKey.trim() || hfCustomEndpoint.trim()) {
       // Save xAI API key
       if (apiKey.trim()) {
         localStorage.setItem('xai_api_key', apiKey.trim());
@@ -38,6 +43,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
       if (hfApiKey.trim()) {
         localStorage.setItem('hf_api_key', hfApiKey.trim());
         setHFApiKey(hfApiKey.trim());
+      }
+      // Save or clear Hugging Face custom endpoint
+      if (hfCustomEndpoint.trim()) {
+        setHFCustomEndpoint(hfCustomEndpoint.trim());
+      } else {
+        clearHFCustomEndpoint();
       }
       setSaved(true);
       setTimeout(() => {
@@ -50,8 +61,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
   const handleClear = () => {
     localStorage.removeItem('xai_api_key');
     localStorage.removeItem('hf_api_key');
+    clearHFCustomEndpoint();
     setApiKeyLocal('');
     setHFApiKeyLocal('');
+    setHFCustomEndpointLocal('');
     setApiKey('');
     setHFApiKey('');
   };
@@ -128,6 +141,31 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
           </p>
         </div>
 
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Custom Inference Endpoint (valfritt)
+          </label>
+          <input
+            type="text"
+            value={hfCustomEndpoint}
+            onChange={(e) => setHFCustomEndpointLocal(e.target.value)}
+            placeholder="https://xxxxx.endpoints.huggingface.cloud"
+            className="w-full p-3 bg-gray-900 rounded-md focus:ring-2 focus:ring-purple-500 focus:outline-none"
+          />
+          <p className="text-xs text-gray-400 mt-2">
+            För högre upplösning och NSFW-modeller. Lämna tom för gratis publik API.
+            <br />
+            <a
+              href="https://huggingface.co/inference-endpoints"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-purple-400 hover:underline"
+            >
+              Skapa endpoint här
+            </a>
+          </p>
+        </div>
+
         <div className="bg-gray-900 p-3 rounded-md mb-4 text-sm text-gray-300">
           <p className="text-xs text-gray-400 mb-2">
             <strong>💡 Hybrid AI-användning:</strong>
@@ -146,12 +184,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
           <p className="text-xs text-gray-500 mt-2">
             🔒 Dina API-nycklar sparas lokalt i din webbläsare och skickas aldrig till någon annan än respektive tjänst.
           </p>
+          {hfCustomEndpoint && (
+            <p className="text-xs text-purple-400 mt-2">
+              ⚡ Custom endpoint aktiverad - högre kvalitet och NSFW-stöd tillgängligt
+            </p>
+          )}
         </div>
 
         <div className="flex gap-3">
           <button
             onClick={handleSave}
-            disabled={!apiKey.trim() && !hfApiKey.trim()}
+            disabled={!apiKey.trim() && !hfApiKey.trim() && !hfCustomEndpoint.trim()}
             className="flex-1 px-4 py-3 bg-blue-600 rounded-md hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-colors"
           >
             {saved ? '✓ Sparad!' : 'Spara'}

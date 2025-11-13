@@ -11,6 +11,15 @@ export default defineConfig(({ mode }) => {
       server: {
         port: 3000,
         host: '0.0.0.0',
+        // Add proxy for Hugging Face API to avoid CORS issues in development
+        proxy: {
+          '/api/hf': {
+            target: 'https://api-inference.huggingface.co',
+            changeOrigin: true,
+            rewrite: (path) => path.replace(/^\/api\/hf/, ''),
+            secure: true,
+          }
+        }
       },
       plugins: [react()],
       define: {

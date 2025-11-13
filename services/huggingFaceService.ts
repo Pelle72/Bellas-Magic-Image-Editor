@@ -5,11 +5,20 @@
 // API key management
 let userApiKey: string | null = null;
 
+// Custom inference endpoint management (optional)
+// If set, this will be used instead of the public Inference API
+// Format: https://your-endpoint.endpoints.huggingface.cloud
+let customEndpoint: string | null = null;
+
 // Initialize from localStorage if available (browser environment)
 if (typeof window !== 'undefined') {
   const storedKey = localStorage.getItem('hf_api_key');
   if (storedKey) {
     userApiKey = storedKey;
+  }
+  const storedEndpoint = localStorage.getItem('hf_custom_endpoint');
+  if (storedEndpoint) {
+    customEndpoint = storedEndpoint;
   }
 }
 
@@ -24,10 +33,46 @@ export const getHFApiKey = (): string | null => {
   if (typeof window !== 'undefined') {
     const storedKey = localStorage.getItem('hf_api_key');
     if (storedKey) {
-      return storedKey;
+      return storedKey.trim();
     }
   }
-  return userApiKey || process.env.HF_API_KEY || null;
+  return userApiKey ? userApiKey.trim() : (process.env.HF_API_KEY || null);
+};
+
+/**
+ * Set a custom Hugging Face Inference Endpoint URL
+ * This allows using dedicated endpoints with higher quality models like NSFW XL
+ * @param endpoint - Full URL of your custom endpoint (e.g., 'https://xxxxx.endpoints.huggingface.cloud')
+ */
+export const setHFCustomEndpoint = (endpoint: string) => {
+  customEndpoint = endpoint;
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('hf_custom_endpoint', endpoint);
+  }
+};
+
+/**
+ * Get the custom Hugging Face Inference Endpoint URL if set
+ * @returns The custom endpoint URL or null if using public API
+ */
+export const getHFCustomEndpoint = (): string | null => {
+  if (typeof window !== 'undefined') {
+    const storedEndpoint = localStorage.getItem('hf_custom_endpoint');
+    if (storedEndpoint) {
+      return storedEndpoint.trim();
+    }
+  }
+  return customEndpoint;
+};
+
+/**
+ * Clear the custom endpoint and revert to public Inference API
+ */
+export const clearHFCustomEndpoint = () => {
+  customEndpoint = null;
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('hf_custom_endpoint');
+  }
 };
 
 // Helper to convert base64 to Blob
@@ -40,6 +85,86 @@ const base64ToBlob = (base64: string, mimeType: string): Blob => {
   const byteArray = new Uint8Array(byteNumbers);
   return new Blob([byteArray], { type: mimeType });
 };
+
+/**
+ * Test Hugging Face API connectivity and authentication
+ * This function can be called from the browser console for debugging
+ */
+export const testHFConnection = async (): Promise<{success: boolean, message: string, details?: any}> => {
+  const apiKey = getHFApiKey();
+  if (!apiKey) {
+    return {
+      success: false,
+      message: 'No API key configured. Please set your HF API key in settings.'
+    };
+  }
+
+  try {
+    console.log('[testHFConnection] Testing connection to Hugging Face API...');
+    console.log('[testHFConnection] API key present:', !!apiKey);
+    console.log('[testHFConnection] API key format valid:', apiKey.startsWith('hf_'));
+    
+    // Test with a simple, well-known model that's always available
+    const testUrl = 'https://api-inference.huggingface.co/models/bert-base-uncased';
+    
+    const response = await fetch(testUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      mode: 'cors',
+      credentials: 'omit'
+    });
+
+    console.log('[testHFConnection] Response status:', response.status);
+    
+    if (response.ok) {
+      const data = await response.json();
+      return {
+        success: true,
+        message: 'Connection successful! Hugging Face API is accessible.',
+        details: {
+          status: response.status,
+          modelInfo: data
+        }
+      };
+    } else {
+      const errorText = await response.text();
+      return {
+        success: false,
+        message: `API returned error status ${response.status}`,
+        details: {
+          status: response.status,
+          error: errorText
+        }
+      };
+    }
+  } catch (error) {
+    console.error('[testHFConnection] Error:', error);
+    if (error instanceof Error) {
+      return {
+        success: false,
+        message: `Connection failed: ${error.message}`,
+        details: {
+          errorName: error.name,
+          errorMessage: error.message,
+          errorType: error.name === 'TypeError' ? 'Likely CORS or network issue' : 'Unknown error'
+        }
+      };
+    }
+    return {
+      success: false,
+      message: 'Unknown error occurred',
+      details: error
+    };
+  }
+};
+
+// Make testHFConnection available globally for console debugging
+if (typeof window !== 'undefined') {
+  (window as any).testHFConnection = testHFConnection;
+  console.log('[HF Service] testHFConnection() is available in console for debugging');
+}
 
 // Helper to convert Blob to base64
 const blobToBase64 = (blob: Blob): Promise<string> => {
@@ -76,6 +201,12 @@ export const inpaintImage = async (
   const apiKey = getHFApiKey();
   if (!apiKey) {
     throw new Error("HF_API_KEY inte inställd. Ange din Hugging Face API-nyckel i inställningarna.");
+  }
+
+  // Validate API key format (should start with 'hf_')
+  if (!apiKey.startsWith('hf_')) {
+    console.warn('[inpaintImage] API key does not start with hf_ - this might be incorrect');
+    throw new Error("Ogiltig Hugging Face API-nyckel format. Nyckeln ska börja med 'hf_'.");
   }
 
   try {
@@ -157,12 +288,21 @@ export const inpaintImage = async (
     console.log('[inpaintImage] Image blob size:', imageBlob.size, 'bytes');
     console.log('[inpaintImage] Mask blob size:', maskBlob.size, 'bytes');
 
-    // Use SDXL Inpainting model which properly supports inpainting with image + mask
-    // The previous omnigenxl-nsfw-sfw model was text-to-image only and didn't support inpainting
-    // Safety checker is disabled to allow NSFW content generation
-    const model = 'diffusers/stable-diffusion-xl-1.0-inpainting-0.1';
+    // Use Stable Diffusion Inpainting model
+    // When using custom endpoint, use SDXL for better quality
+    // Default to SD 1.5 inpainting for public API (most reliable)
+    const customEndpoint = getHFCustomEndpoint();
+    const model = customEndpoint
+      ? 'stabilityai/stable-diffusion-xl-base-1.0'  // SDXL works for inpainting too
+      : 'runwayml/stable-diffusion-inpainting';      // SD 1.5 inpainting for public API
+    
     console.log('[inpaintImage] Model:', model);
-    const apiUrl = `https://api-inference.huggingface.co/models/${model}`;
+    
+    const apiUrl = customEndpoint 
+      ? customEndpoint  // Use custom endpoint directly
+      : `https://api-inference.huggingface.co/models/${model}`;  // Use public API with model
+    
+    console.log('[inpaintImage] API URL:', customEndpoint ? 'Custom Endpoint' : apiUrl);
 
     // Create FormData for multipart upload
     const formData = new FormData();
@@ -176,12 +316,18 @@ export const inpaintImage = async (
     }));
 
     console.log('[inpaintImage] Sending request to Hugging Face API...');
+    console.log('[inpaintImage] API URL:', apiUrl);
+    console.log('[inpaintImage] API Key present:', !!apiKey);
+    console.log('[inpaintImage] API Key prefix:', apiKey ? apiKey.substring(0, 10) + '...' : 'none');
+    
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
       },
-      body: formData
+      body: formData,
+      mode: 'cors', // Explicitly set CORS mode
+      credentials: 'omit' // Don't send cookies
     });
 
     console.log('[inpaintImage] Response status:', response.status);
@@ -193,6 +339,10 @@ export const inpaintImage = async (
         throw new Error('Ogiltig Hugging Face API-nyckel. Kontrollera din nyckel i inställningarna.');
       }
       if (response.status === 503) {
+        // Model is loading - especially common for custom endpoints on first request
+        if (customEndpoint) {
+          throw new Error('Modellen laddas (detta kan ta 30-60 sekunder vid första användningen). Vänta och försök igen.');
+        }
         throw new Error('Modellen laddas. Vänta några sekunder och försök igen.');
       }
       throw new Error(`Hugging Face API-fel (${response.status}): ${errorText}`);
@@ -214,8 +364,15 @@ export const inpaintImage = async (
     // Log detailed error information for debugging
     if (error && typeof error === 'object') {
       console.error("[inpaintImage] Error details:", JSON.stringify(error, null, 2));
+      console.error("[inpaintImage] Error name:", (error as any).name);
+      console.error("[inpaintImage] Error message:", (error as any).message);
     }
     if (error instanceof Error) {
+      // Check for CORS-specific errors
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        console.error("[inpaintImage] CORS or network error detected");
+        throw new Error('Kunde inte ansluta till Hugging Face API. Detta kan bero på:\n1. CORS-begränsningar i webbläsaren\n2. Nätverksproblem\n3. Ogiltig API-nyckel\n\nFörsök:\n- Kontrollera din internetanslutning\n- Verifiera din HF API-nyckel i inställningarna\n- Försök igen om några sekunder');
+      }
       // Check for network/fetch errors
       if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
         throw new Error('Kunde inte ansluta till Hugging Face API. Kontrollera din internetanslutning och API-nyckel.');
@@ -356,15 +513,40 @@ export const generateImageFromText = async (
     throw new Error("HF_API_KEY inte inställd. Ange din Hugging Face API-nyckel i inställningarna.");
   }
 
+  // Validate API key format (should start with 'hf_')
+  if (!apiKey.startsWith('hf_')) {
+    console.warn('[generateImageFromText] API key does not start with hf_ - this might be incorrect');
+    throw new Error("Ogiltig Hugging Face API-nyckel format. Nyckeln ska börja med 'hf_'.");
+  }
+
   try {
     console.log('[generateImageFromText] Generating image from text...');
     console.log('[generateImageFromText] Prompt:', prompt);
 
-    // Use NSFW XL model for high-quality unrestricted image generation
-    // OmnigenXL NSFW/SFW provides excellent quality for all content types
-    const model = 'stablediffusionapi/omnigenxl-nsfw-sfw';
-    const apiUrl = `https://api-inference.huggingface.co/models/${model}`;
+    // Use Stable Diffusion model for text-to-image generation
+    // When using custom endpoint, use SDXL for 1024x1024 resolution and NSFW support
+    // Default to SD 1.5 for public API (most reliable)
+    const customEndpoint = getHFCustomEndpoint();
+    const model = customEndpoint 
+      ? 'stabilityai/stable-diffusion-xl-base-1.0'  // SDXL for custom endpoint (1024x1024, NSFW)
+      : 'runwayml/stable-diffusion-v1-5';            // SD 1.5 for public API (512x512)
+    
+    // Alternative models for custom endpoint:
+    // const model = 'stablediffusionapi/omnigenxl-nsfw-sfw';  // NSFW XL (if available)
+    // const model = 'stabilityai/stable-diffusion-2-1';        // SD 2.1
+    
+    // Check if custom endpoint is configured
+    const apiUrl = customEndpoint 
+      ? customEndpoint  // Use custom endpoint directly
+      : `https://api-inference.huggingface.co/models/${model}`;  // Use public API with model
+    
+    console.log('[generateImageFromText] Model:', model);
+    console.log('[generateImageFromText] API URL:', customEndpoint ? 'Custom Endpoint' : apiUrl);
 
+    console.log('[generateImageFromText] Sending request to Hugging Face API...');
+    console.log('[generateImageFromText] API URL:', apiUrl);
+    console.log('[generateImageFromText] API Key present:', !!apiKey);
+    
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -373,9 +555,12 @@ export const generateImageFromText = async (
       },
       body: JSON.stringify({
         inputs: prompt,
-      })
+      }),
+      mode: 'cors', // Explicitly set CORS mode
+      credentials: 'omit' // Don't send cookies
     });
 
+    console.log('[generateImageFromText] Response status:', response.status);
     if (!response.ok) {
       const errorText = await response.text();
       console.error('[generateImageFromText] API error:', response.status, errorText);
@@ -384,6 +569,10 @@ export const generateImageFromText = async (
         throw new Error('Ogiltig Hugging Face API-nyckel. Kontrollera din nyckel i inställningarna.');
       }
       if (response.status === 503) {
+        // Model is loading - especially common for custom endpoints on first request
+        if (customEndpoint) {
+          throw new Error('Modellen laddas (detta kan ta 30-60 sekunder vid första användningen). Vänta och försök igen.');
+        }
         throw new Error('Modellen laddas. Vänta några sekunder och försök igen.');
       }
       throw new Error(`Hugging Face API-fel (${response.status}): ${errorText}`);
@@ -401,7 +590,17 @@ export const generateImageFromText = async (
 
   } catch (error) {
     console.error("Error generating image from text with Hugging Face:", error);
+    if (error && typeof error === 'object') {
+      console.error("[generateImageFromText] Error details:", JSON.stringify(error, null, 2));
+      console.error("[generateImageFromText] Error name:", (error as any).name);
+      console.error("[generateImageFromText] Error message:", (error as any).message);
+    }
     if (error instanceof Error) {
+      // Check for CORS-specific errors
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        console.error("[generateImageFromText] CORS or network error detected");
+        throw new Error('Kunde inte ansluta till Hugging Face API. Detta kan bero på:\n1. CORS-begränsningar i webbläsaren\n2. Nätverksproblem\n3. Ogiltig API-nyckel\n\nFörsök:\n- Kontrollera din internetanslutning\n- Verifiera din HF API-nyckel i inställningarna\n- Försök igen om några sekunder');
+      }
       // Check for network/fetch errors
       if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
         throw new Error('Kunde inte ansluta till Hugging Face API. Kontrollera din internetanslutning och API-nyckel.');
