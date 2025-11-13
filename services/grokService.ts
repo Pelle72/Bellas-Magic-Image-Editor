@@ -118,13 +118,26 @@ Respond ONLY with the image generation prompt, no other text.`
     // Content policy is inherently permissive for fashion, swimwear, and artistic content.
     // Style preferences should be incorporated directly into the prompt text.
     console.log('[editImageWithPrompt] Step 2: Generating image with Grok-2...');
-    const response = await client.images.generate({
-      model: "grok-2-image-1212",
-      prompt: truncatedPrompt,
-      n: 1
-    });
+    console.log('[editImageWithPrompt] Prompt being sent:', truncatedPrompt);
     
-    console.log('[editImageWithPrompt] Image generation response received');
+    // Try to generate the image with explicit error handling
+    let response;
+    try {
+      response = await client.images.generate({
+        model: "grok-2-image-1212",
+        prompt: truncatedPrompt,
+        n: 1,
+        response_format: "url"
+      });
+      console.log('[editImageWithPrompt] Image generation response received');
+    } catch (genError: any) {
+      console.error('[editImageWithPrompt] Image generation failed:', genError);
+      // Provide more specific error message
+      if (genError.status === 404) {
+        throw new Error("AI:n kunde inte generera bilden: Bildgenerering stöds inte av denna API-version. Kontrollera att din API-nyckel har tillgång till grok-2-image-1212 modellen.");
+      }
+      throw genError; // Re-throw to be caught by outer catch block
+    }
 
     if (!response.data || response.data.length === 0) {
       throw new Error("AI:n returnerade inget bildsvar. Prova en annan prompt.");
@@ -366,7 +379,8 @@ export const createImageFromMultiple = async (
     const generationResponse = await client.images.generate({
       model: "grok-2-image-1212",
       prompt: truncatedFusionPrompt,
-      n: 1
+      n: 1,
+      response_format: "url"
     });
 
     if (!generationResponse.data || generationResponse.data.length === 0) {
