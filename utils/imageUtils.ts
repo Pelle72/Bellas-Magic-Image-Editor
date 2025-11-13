@@ -3,8 +3,9 @@
  */
 
 // Maximum dimensions for xAI Grok API
-// Based on typical vision model limits, using 2048x2048 as safe maximum
-const MAX_IMAGE_DIMENSION = 2048;
+// Based on API generation limits, the maximum supported dimension is 1536px
+// This applies to both input images (for vision/analysis) and output generation
+const MAX_IMAGE_DIMENSION = 1536;
 
 // Supported image generation sizes for xAI Grok API
 // Following OpenAI-compatible format
@@ -162,6 +163,50 @@ export const determineGenerationSize = (width: number, height: number): Generati
   
   // If image is landscape (wider than tall)
   return '1536x1024';
+};
+
+/**
+ * Check if an image aspect ratio is unsupported (too extreme for good quality generation)
+ * Unsupported ratios would require significant distortion or letterboxing
+ * 
+ * Thresholds:
+ * - Portrait: aspect ratio < 0.6 (e.g., 9:16 = 0.5625)
+ * - Landscape: aspect ratio > 1.7 (e.g., 16:9 = 1.778)
+ * - These are beyond reasonable mapping to API sizes (2:3 = 0.667, 3:2 = 1.5)
+ */
+export const isAspectRatioUnsupported = (width: number, height: number): boolean => {
+  const aspectRatio = width / height;
+  
+  // Too tall (extreme portrait)
+  if (aspectRatio < 0.6) {
+    return true;
+  }
+  
+  // Too wide (extreme landscape)
+  if (aspectRatio > 1.7) {
+    return true;
+  }
+  
+  return false;
+};
+
+/**
+ * Get a human-readable aspect ratio string
+ */
+export const getAspectRatioString = (width: number, height: number): string => {
+  const aspectRatio = width / height;
+  
+  // Common aspect ratios
+  if (Math.abs(aspectRatio - 1.0) < 0.01) return '1:1';
+  if (Math.abs(aspectRatio - 16/9) < 0.01) return '16:9';
+  if (Math.abs(aspectRatio - 9/16) < 0.01) return '9:16';
+  if (Math.abs(aspectRatio - 4/3) < 0.01) return '4:3';
+  if (Math.abs(aspectRatio - 3/4) < 0.01) return '3:4';
+  if (Math.abs(aspectRatio - 3/2) < 0.01) return '3:2';
+  if (Math.abs(aspectRatio - 2/3) < 0.01) return '2:3';
+  
+  // Default to width:height ratio
+  return `${width}:${height}`;
 };
 
 /**

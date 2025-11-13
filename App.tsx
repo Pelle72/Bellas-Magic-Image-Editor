@@ -12,7 +12,8 @@ import ImageViewer from './components/ImageViewer';
 import ZoomModal from './components/ZoomModal';
 import SettingsModal from './components/SettingsModal';
 import { buildPromptWithDescription } from './utils/promptUtils';
-import { downscaleImage, downscaleCanvasForAPI } from './utils/imageUtils';
+import { downscaleImage, downscaleCanvasForAPI, isAspectRatioUnsupported, getAspectRatioString, getImageDimensions } from './utils/imageUtils';
+import UnsupportedRatioModal from './components/UnsupportedRatioModal';
 
 const AgeGate: React.FC<{ onConfirm: () => void }> = ({ onConfirm }) => {
     const [showNoMessage, setShowNoMessage] = useState(false);
@@ -82,7 +83,7 @@ const SplashScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
 );
 
 
-const fileToImageFile = async (file: File): Promise<ImageFile> => {
+const fileToImageFile = async (file: File): Promise<{imageFile: ImageFile, isUnsupported: boolean, aspectRatioString: string}> => {
     try {
         // Downscale image if it exceeds maximum dimensions
         const result = await downscaleImage(file);
@@ -92,12 +93,18 @@ const fileToImageFile = async (file: File): Promise<ImageFile> => {
             console.log(`Image downscaled: ${result.originalWidth}x${result.originalHeight} → ${result.newWidth}x${result.newHeight}`);
         }
         
-        return {
+        const imageFile: ImageFile = {
             id: `${file.name}-${file.lastModified}-${Math.random()}`,
             file,
             base64: result.base64,
             mimeType: result.mimeType,
         };
+        
+        // Check if aspect ratio is unsupported
+        const isUnsupported = isAspectRatioUnsupported(result.newWidth, result.newHeight);
+        const aspectRatioString = getAspectRatioString(result.newWidth, result.newHeight);
+        
+        return { imageFile, isUnsupported, aspectRatioString };
     } catch (error) {
         console.error('Error processing image:', error);
         throw new Error('Kunde inte bearbeta bilden. Kontrollera att filen är en giltig bild.');
@@ -131,6 +138,10 @@ const App: React.FC = () => {
     const [isExpanding, setIsExpanding] = useState(false);
     const [isZooming, setIsZooming] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [unsupportedRatioImage, setUnsupportedRatioImage] = useState<{
+        imageFile: ImageFile;
+        aspectRatioString: string;
+    } | null>(null);
 
     const activeSession = useMemo(() => sessions.find(s => s.id === activeSessionId), [sessions, activeSessionId]);
 
@@ -164,13 +175,29 @@ const App: React.FC = () => {
             setLoadingMessage(`Laddar ${e.target.files.length} bild(er)...`);
             setError(null);
             try {
-                const newImageFiles = await Promise.all(
+                const results = await Promise.all(
                     Array.from(e.target.files).map(fileToImageFile)
                 );
 
-                const newSessions: ImageSession[] = newImageFiles.map(imageFile => ({
-                    id: imageFile.id,
-                    original: imageFile,
+                // Check if any image has unsupported ratio
+                const firstUnsupported = results.find(r => r.isUnsupported);
+                
+                if (firstUnsupported) {
+                    // Show modal for the first unsupported image
+                    setUnsupportedRatioImage({
+                        imageFile: firstUnsupported.imageFile,
+                        aspectRatioString: firstUnsupported.aspectRatioString
+                    });
+                    setIsLoading(false);
+                    setLoadingMessage('');
+                    e.target.value = '';
+                    return;
+                }
+
+                // All images have supported ratios, add them normally
+                const newSessions: ImageSession[] = results.map(r => ({
+                    id: r.imageFile.id,
+                    original: r.imageFile,
                     history: [],
                     historyIndex: -1,
                     prompt: '',
@@ -413,6 +440,144 @@ const App: React.FC = () => {
                 setLoadingMessage('');
             }
         }
+    };
+
+    const addBordersToImage = async (imageFile: ImageFile): Promise<ImageFile> => {
+        // Get the closest supported aspect ratio
+        const dimensions = await getImageDimensions(imageFile.base64, imageFile.mimeType);
+        const aspectRatio = dimensions.width / dimensions.height;
+        
+        // Determine target dimensions based on aspect ratio
+        let targetWidth: number, targetHeight: number;
+        
+        if (aspectRatio >= 0.9 && aspectRatio <= 1.1) {
+            // Square
+            targetWidth = targetHeight = 1024;
+        } else if (aspectRatio < 1.0) {
+            // Portrait - use 2:3 ratio
+            targetWidth = 1024;
+            targetHeight = 1536;
+        } else {
+            // Landscape - use 3:2 ratio
+            targetWidth = 1536;
+            targetHeight = 1024;
+        }
+        
+        // Create canvas with target dimensions
+        const canvas = document.createElement('canvas');
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Kunde inte skapa canvas');
+        
+        // Fill with black background
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, targetWidth, targetHeight);
+        
+        // Load the image
+        const img = new Image();
+        img.src = `data:${imageFile.mimeType};base64,${imageFile.base64}`;
+        await new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = reject;
+        });
+        
+        // Calculate scaling to fit image within target dimensions
+        const scale = Math.min(targetWidth / dimensions.width, targetHeight / dimensions.height);
+        const scaledWidth = dimensions.width * scale;
+        const scaledHeight = dimensions.height * scale;
+        
+        // Center the image
+        const x = (targetWidth - scaledWidth) / 2;
+        const y = (targetHeight - scaledHeight) / 2;
+        
+        // Draw the image centered with borders
+        ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
+        
+        // Convert to base64
+        const newBase64 = canvas.toDataURL('image/png').split(',')[1];
+        
+        return {
+            ...imageFile,
+            base64: newBase64,
+            mimeType: 'image/png'
+        };
+    };
+
+    const handleUnsupportedRatioAddBorders = async () => {
+        if (!unsupportedRatioImage) return;
+        
+        setIsLoading(true);
+        setLoadingMessage('Lägger till ramar...');
+        setError(null);
+        
+        try {
+            const borderedImage = await addBordersToImage(unsupportedRatioImage.imageFile);
+            
+            const newSession: ImageSession = {
+                id: borderedImage.id,
+                original: borderedImage,
+                history: [],
+                historyIndex: -1,
+                prompt: '',
+                zoomRequest: null
+            };
+            
+            setSessions(prev => [...prev, newSession]);
+            if (!activeSessionId || sessions.length === 0) {
+                setActiveSessionId(newSession.id);
+            }
+            
+            setUnsupportedRatioImage(null);
+        } catch (err: any) {
+            setError(err.message || 'Kunde inte lägga till ramar.');
+            console.error(err);
+        } finally {
+            setIsLoading(false);
+            setLoadingMessage('');
+        }
+    };
+
+    const handleUnsupportedRatioAIExpand = () => {
+        if (!unsupportedRatioImage) return;
+        
+        // Add the image to sessions first
+        const newSession: ImageSession = {
+            id: unsupportedRatioImage.imageFile.id,
+            original: unsupportedRatioImage.imageFile,
+            history: [],
+            historyIndex: -1,
+            prompt: '',
+            zoomRequest: null
+        };
+        
+        setSessions(prev => [...prev, newSession]);
+        setActiveSessionId(newSession.id);
+        
+        // Close the unsupported ratio modal and open expand modal
+        setUnsupportedRatioImage(null);
+        setIsExpanding(true);
+    };
+
+    const handleUnsupportedRatioCancel = () => {
+        if (!unsupportedRatioImage) return;
+        
+        // Add the image anyway without modifications
+        const newSession: ImageSession = {
+            id: unsupportedRatioImage.imageFile.id,
+            original: unsupportedRatioImage.imageFile,
+            history: [],
+            historyIndex: -1,
+            prompt: '',
+            zoomRequest: null
+        };
+        
+        setSessions(prev => [...prev, newSession]);
+        if (!activeSessionId || sessions.length === 0) {
+            setActiveSessionId(newSession.id);
+        }
+        
+        setUnsupportedRatioImage(null);
     };
 
     const handleUndo = () => {
@@ -671,6 +836,14 @@ const App: React.FC = () => {
             {isSettingsOpen && (
                 <SettingsModal
                     onClose={() => setIsSettingsOpen(false)}
+                />
+            )}
+            {unsupportedRatioImage && (
+                <UnsupportedRatioModal
+                    aspectRatioString={unsupportedRatioImage.aspectRatioString}
+                    onAddBorders={handleUnsupportedRatioAddBorders}
+                    onAIExpand={handleUnsupportedRatioAIExpand}
+                    onCancel={handleUnsupportedRatioCancel}
                 />
             )}
         </div>
