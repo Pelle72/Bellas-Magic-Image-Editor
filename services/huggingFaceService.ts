@@ -24,10 +24,10 @@ export const getHFApiKey = (): string | null => {
   if (typeof window !== 'undefined') {
     const storedKey = localStorage.getItem('hf_api_key');
     if (storedKey) {
-      return storedKey;
+      return storedKey.trim();
     }
   }
-  return userApiKey || process.env.HF_API_KEY || null;
+  return userApiKey ? userApiKey.trim() : (process.env.HF_API_KEY || null);
 };
 
 // Helper to convert base64 to Blob
@@ -76,6 +76,12 @@ export const inpaintImage = async (
   const apiKey = getHFApiKey();
   if (!apiKey) {
     throw new Error("HF_API_KEY inte inställd. Ange din Hugging Face API-nyckel i inställningarna.");
+  }
+
+  // Validate API key format (should start with 'hf_')
+  if (!apiKey.startsWith('hf_')) {
+    console.warn('[inpaintImage] API key does not start with hf_ - this might be incorrect');
+    throw new Error("Ogiltig Hugging Face API-nyckel format. Nyckeln ska börja med 'hf_'.");
   }
 
   try {
@@ -176,12 +182,18 @@ export const inpaintImage = async (
     }));
 
     console.log('[inpaintImage] Sending request to Hugging Face API...');
+    console.log('[inpaintImage] API URL:', apiUrl);
+    console.log('[inpaintImage] API Key present:', !!apiKey);
+    console.log('[inpaintImage] API Key prefix:', apiKey ? apiKey.substring(0, 10) + '...' : 'none');
+    
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
       },
-      body: formData
+      body: formData,
+      mode: 'cors', // Explicitly set CORS mode
+      credentials: 'omit' // Don't send cookies
     });
 
     console.log('[inpaintImage] Response status:', response.status);
@@ -214,8 +226,15 @@ export const inpaintImage = async (
     // Log detailed error information for debugging
     if (error && typeof error === 'object') {
       console.error("[inpaintImage] Error details:", JSON.stringify(error, null, 2));
+      console.error("[inpaintImage] Error name:", (error as any).name);
+      console.error("[inpaintImage] Error message:", (error as any).message);
     }
     if (error instanceof Error) {
+      // Check for CORS-specific errors
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        console.error("[inpaintImage] CORS or network error detected");
+        throw new Error('Kunde inte ansluta till Hugging Face API. Detta kan bero på:\n1. CORS-begränsningar i webbläsaren\n2. Nätverksproblem\n3. Ogiltig API-nyckel\n\nFörsök:\n- Kontrollera din internetanslutning\n- Verifiera din HF API-nyckel i inställningarna\n- Försök igen om några sekunder');
+      }
       // Check for network/fetch errors
       if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
         throw new Error('Kunde inte ansluta till Hugging Face API. Kontrollera din internetanslutning och API-nyckel.');
@@ -356,6 +375,12 @@ export const generateImageFromText = async (
     throw new Error("HF_API_KEY inte inställd. Ange din Hugging Face API-nyckel i inställningarna.");
   }
 
+  // Validate API key format (should start with 'hf_')
+  if (!apiKey.startsWith('hf_')) {
+    console.warn('[generateImageFromText] API key does not start with hf_ - this might be incorrect');
+    throw new Error("Ogiltig Hugging Face API-nyckel format. Nyckeln ska börja med 'hf_'.");
+  }
+
   try {
     console.log('[generateImageFromText] Generating image from text...');
     console.log('[generateImageFromText] Prompt:', prompt);
@@ -365,6 +390,10 @@ export const generateImageFromText = async (
     const model = 'stablediffusionapi/omnigenxl-nsfw-sfw';
     const apiUrl = `https://api-inference.huggingface.co/models/${model}`;
 
+    console.log('[generateImageFromText] Sending request to Hugging Face API...');
+    console.log('[generateImageFromText] API URL:', apiUrl);
+    console.log('[generateImageFromText] API Key present:', !!apiKey);
+    
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -373,9 +402,12 @@ export const generateImageFromText = async (
       },
       body: JSON.stringify({
         inputs: prompt,
-      })
+      }),
+      mode: 'cors', // Explicitly set CORS mode
+      credentials: 'omit' // Don't send cookies
     });
 
+    console.log('[generateImageFromText] Response status:', response.status);
     if (!response.ok) {
       const errorText = await response.text();
       console.error('[generateImageFromText] API error:', response.status, errorText);
@@ -401,7 +433,17 @@ export const generateImageFromText = async (
 
   } catch (error) {
     console.error("Error generating image from text with Hugging Face:", error);
+    if (error && typeof error === 'object') {
+      console.error("[generateImageFromText] Error details:", JSON.stringify(error, null, 2));
+      console.error("[generateImageFromText] Error name:", (error as any).name);
+      console.error("[generateImageFromText] Error message:", (error as any).message);
+    }
     if (error instanceof Error) {
+      // Check for CORS-specific errors
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        console.error("[generateImageFromText] CORS or network error detected");
+        throw new Error('Kunde inte ansluta till Hugging Face API. Detta kan bero på:\n1. CORS-begränsningar i webbläsaren\n2. Nätverksproblem\n3. Ogiltig API-nyckel\n\nFörsök:\n- Kontrollera din internetanslutning\n- Verifiera din HF API-nyckel i inställningarna\n- Försök igen om några sekunder');
+      }
       // Check for network/fetch errors
       if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
         throw new Error('Kunde inte ansluta till Hugging Face API. Kontrollera din internetanslutning och API-nyckel.');
