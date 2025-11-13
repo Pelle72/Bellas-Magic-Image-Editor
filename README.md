@@ -18,13 +18,16 @@ This app uses an **intelligent hybrid strategy** that leverages the unique stren
 - **Cost**: $0.20-$0.40 per 1M input tokens, $0.50-$1.00 per 1M output tokens
 
 ### 🎨 Hugging Face - Image Generation & Editing
-- **All image generation** - Stable Diffusion XL for text-to-image  
-  **Pre-configured with OmnigenXL NSFW/SFW** - unrestricted content support
-- **Image editing** - Image-to-image with inpainting (preserves originals)
+- **All image generation** - Stable Diffusion for text-to-image  
+  **Currently configured with: `runwayml/stable-diffusion-v1-5`** - most reliable model
+- **Image editing** - Image-to-image with inpainting (preserves originals)  
+  **Currently configured with: `runwayml/stable-diffusion-inpainting`** - most reliable
 - **Inpainting** - Precise mask-based editing
 - **Outpainting/Expansion** - Seamless image extension beyond borders
 - **Cost**: $0.001-$0.02 per request (compute-time based)
-- **Resolution limits**: Auto-downscales to 2048px max dimension (preserves aspect ratio)
+- **Resolution limits**: Auto-downscales to 1024px max dimension (preserves aspect ratio)
+
+**Note**: The app now uses the most reliable Stable Diffusion models that are guaranteed to work with the Hugging Face Inference API. For NSFW content support, you can modify the models in `services/huggingFaceService.ts`.
 
 ### 🚀 Why This Combination?
 

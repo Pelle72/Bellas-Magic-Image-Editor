@@ -243,10 +243,14 @@ export const inpaintImage = async (
     console.log('[inpaintImage] Image blob size:', imageBlob.size, 'bytes');
     console.log('[inpaintImage] Mask blob size:', maskBlob.size, 'bytes');
 
-    // Use SDXL Inpainting model which properly supports inpainting with image + mask
-    // The previous omnigenxl-nsfw-sfw model was text-to-image only and didn't support inpainting
-    // Safety checker is disabled to allow NSFW content generation
-    const model = 'diffusers/stable-diffusion-xl-1.0-inpainting-0.1';
+    // Use Stable Diffusion Inpainting model
+    // Using SD 1.5 inpainting as it's the most reliable and accessible via Inference API
+    const model = 'runwayml/stable-diffusion-inpainting';  // Most reliable
+    
+    // Alternative models (uncomment to use):
+    // const model = 'diffusers/stable-diffusion-xl-1.0-inpainting-0.1';  // SDXL inpainting (may have CORS issues)
+    // const model = 'stabilityai/stable-diffusion-2-inpainting';          // SD 2.0 inpainting
+    
     console.log('[inpaintImage] Model:', model);
     const apiUrl = `https://api-inference.huggingface.co/models/${model}`;
 
@@ -465,9 +469,16 @@ export const generateImageFromText = async (
     console.log('[generateImageFromText] Generating image from text...');
     console.log('[generateImageFromText] Prompt:', prompt);
 
-    // Use NSFW XL model for high-quality unrestricted image generation
-    // OmnigenXL NSFW/SFW provides excellent quality for all content types
-    const model = 'stablediffusionapi/omnigenxl-nsfw-sfw';
+    // Use Stable Diffusion model for text-to-image generation
+    // Using SD 1.5 as it's the most reliable and widely accessible model via Inference API
+    // For NSFW content, users can uncomment one of the alternative models below
+    const model = 'runwayml/stable-diffusion-v1-5';  // Most reliable, always accessible
+    
+    // Alternative models (uncomment to use):
+    // const model = 'stablediffusionapi/omnigenxl-nsfw-sfw';  // Original NSFW model (may have CORS issues)
+    // const model = 'stabilityai/stable-diffusion-2-1';        // SD 2.1 (good quality)
+    // const model = 'CompVis/stable-diffusion-v1-4';           // SD 1.4 (older but reliable)
+    
     const apiUrl = `https://api-inference.huggingface.co/models/${model}`;
 
     console.log('[generateImageFromText] Sending request to Hugging Face API...');
