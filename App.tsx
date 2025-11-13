@@ -12,6 +12,7 @@ import ImageViewer from './components/ImageViewer';
 import ZoomModal from './components/ZoomModal';
 import SettingsModal from './components/SettingsModal';
 import { buildPromptWithDescription } from './utils/promptUtils';
+import { downscaleImage } from './utils/imageUtils';
 
 const AgeGate: React.FC<{ onConfirm: () => void }> = ({ onConfirm }) => {
     const [showNoMessage, setShowNoMessage] = useState(false);
@@ -81,21 +82,26 @@ const SplashScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => (
 );
 
 
-const fileToImageFile = (file: File): Promise<ImageFile> => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-            const base64 = (reader.result as string).split(',')[1];
-            resolve({
-                id: `${file.name}-${file.lastModified}-${Math.random()}`,
-                file,
-                base64,
-                mimeType: file.type,
-            });
+const fileToImageFile = async (file: File): Promise<ImageFile> => {
+    try {
+        // Downscale image if it exceeds maximum dimensions
+        const result = await downscaleImage(file);
+        
+        // Log if image was downscaled
+        if (result.originalWidth !== result.newWidth || result.originalHeight !== result.newHeight) {
+            console.log(`Image downscaled: ${result.originalWidth}x${result.originalHeight} → ${result.newWidth}x${result.newHeight}`);
+        }
+        
+        return {
+            id: `${file.name}-${file.lastModified}-${Math.random()}`,
+            file,
+            base64: result.base64,
+            mimeType: result.mimeType,
         };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
+    } catch (error) {
+        console.error('Error processing image:', error);
+        throw new Error('Kunde inte bearbeta bilden. Kontrollera att filen är en giltig bild.');
+    }
 };
 
 const base64ToBlob = (base64: string, mimeType: string): Blob => {
