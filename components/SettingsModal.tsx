@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { KeyIcon } from './Icons';
 import { getApiKey, setApiKey } from '../services/grokService';
+import { getHFApiKey, setHFApiKey } from '../services/huggingFaceService';
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -8,24 +9,36 @@ interface SettingsModalProps {
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
   const [apiKey, setApiKeyLocal] = useState('');
+  const [hfApiKey, setHFApiKeyLocal] = useState('');
   const [showKey, setShowKey] = useState(false);
+  const [showHFKey, setShowHFKey] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    // Load API key from localStorage or environment
+    // Load API keys from localStorage or environment
     // Security note: Keys are stored in clear text in localStorage.
     // This is standard for client-side apps where users manage their own keys.
     const storedKey = localStorage.getItem('xai_api_key');
     const currentKey = storedKey || getApiKey() || '';
     setApiKeyLocal(currentKey);
+    
+    const storedHFKey = localStorage.getItem('hf_api_key');
+    const currentHFKey = storedHFKey || getHFApiKey() || '';
+    setHFApiKeyLocal(currentHFKey);
   }, []);
 
   const handleSave = () => {
-    if (apiKey.trim()) {
-      // Save to localStorage
-      localStorage.setItem('xai_api_key', apiKey.trim());
-      // Set in service
-      setApiKey(apiKey.trim());
+    if (apiKey.trim() || hfApiKey.trim()) {
+      // Save xAI API key
+      if (apiKey.trim()) {
+        localStorage.setItem('xai_api_key', apiKey.trim());
+        setApiKey(apiKey.trim());
+      }
+      // Save Hugging Face API key
+      if (hfApiKey.trim()) {
+        localStorage.setItem('hf_api_key', hfApiKey.trim());
+        setHFApiKey(hfApiKey.trim());
+      }
       setSaved(true);
       setTimeout(() => {
         setSaved(false);
@@ -36,8 +49,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
 
   const handleClear = () => {
     localStorage.removeItem('xai_api_key');
+    localStorage.removeItem('hf_api_key');
     setApiKeyLocal('');
+    setHFApiKeyLocal('');
     setApiKey('');
+    setHFApiKey('');
   };
 
   return (
@@ -50,7 +66,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
         
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            xAI API-nyckel
+            xAI API-nyckel (för allmän bildredigering)
           </label>
           <div className="relative">
             <input
@@ -78,32 +94,61 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
               console.x.ai
             </a>
           </p>
-          <p className="text-xs text-gray-500 mt-1">
-            🔒 Din API-nyckel sparas lokalt i din webbläsare och skickas aldrig till någon annan än xAI.
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Hugging Face API-nyckel (för inpainting/outpainting)
+          </label>
+          <div className="relative">
+            <input
+              type={showHFKey ? 'text' : 'password'}
+              value={hfApiKey}
+              onChange={(e) => setHFApiKeyLocal(e.target.value)}
+              placeholder="hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              className="w-full p-3 bg-gray-900 rounded-md focus:ring-2 focus:ring-purple-500 focus:outline-none pr-20"
+            />
+            <button
+              onClick={() => setShowHFKey(!showHFKey)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 text-sm bg-gray-700 rounded hover:bg-gray-600 transition-colors"
+            >
+              {showHFKey ? 'Dölj' : 'Visa'}
+            </button>
+          </div>
+          <p className="text-xs text-gray-400 mt-2">
+            Hämta din API-nyckel från{' '}
+            <a
+              href="https://huggingface.co/settings/tokens"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-purple-400 hover:underline"
+            >
+              huggingface.co/settings/tokens
+            </a>
           </p>
         </div>
 
         <div className="bg-gray-900 p-3 rounded-md mb-4 text-sm text-gray-300">
-          <p className="mb-2">
-            <strong>Rekommenderade modeller:</strong>
+          <p className="text-xs text-gray-400 mb-2">
+            <strong>💡 API-användning:</strong>
           </p>
-          <ul className="list-disc list-inside space-y-1 text-xs">
+          <ul className="list-disc list-inside space-y-1 text-xs text-gray-400">
             <li>
-              <strong>grok-4-fast-reasoning</strong> - Bäst balans mellan kvalitet och kostnad för bildanalys
+              <strong>xAI</strong> - Används för allmän bildredigering och bildanalys
             </li>
             <li>
-              <strong>grok-4-fast-non-reasoning</strong> - Snabbast och billigast för enkla uppgifter
-            </li>
-            <li>
-              <strong>grok-2-image-1212</strong> - För bildgenerering med "Spicy Mode"
+              <strong>Hugging Face</strong> - Används för inpainting och bildexpansion (bättre kvalitet)
             </li>
           </ul>
+          <p className="text-xs text-gray-500 mt-2">
+            🔒 Dina API-nycklar sparas lokalt i din webbläsare och skickas aldrig till någon annan än respektive tjänst.
+          </p>
         </div>
 
         <div className="flex gap-3">
           <button
             onClick={handleSave}
-            disabled={!apiKey.trim()}
+            disabled={!apiKey.trim() && !hfApiKey.trim()}
             className="flex-1 px-4 py-3 bg-blue-600 rounded-md hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-colors"
           >
             {saved ? '✓ Sparad!' : 'Spara'}

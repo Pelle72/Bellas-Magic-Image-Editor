@@ -4,6 +4,7 @@ import type { PixelCrop } from 'react-image-crop';
 
 import type { ImageFile, EditedImage, ImageSession } from './types';
 import { editImageWithPrompt, generatePromptFromImage, translateToEnglish } from './services/grokService';
+import { outpaintImage } from './services/huggingFaceService';
 import { removeBackground } from './backgroundRemovalService';
 import { UploadIcon, SparklesIcon, DownloadIcon, ResetIcon, UndoIcon, RedoIcon, LightBulbIcon, EnhanceIcon, ExpandIcon, CropIcon, ZoomInIcon, RevertIcon, TrashIcon, RemoveBgIcon, ShieldIcon, ShareIcon, SettingsIcon } from './components/Icons';
 import CropModal, { getCroppedImg } from './components/CropModal';
@@ -320,113 +321,28 @@ const App: React.FC = () => {
         setError(null);
 
         try {
+            // Use Grok to analyze the image for context
             const imageDescription = await generatePromptFromImage(currentImage.base64, currentImage.mimeType);
-            setLoadingMessage(`Förbereder expansion till ${aspectRatio}...`);
+            setLoadingMessage(`Förbereder expansion till ${aspectRatio} med Hugging Face...`);
 
-            const image = new Image();
-            image.src = `data:${currentImage.mimeType};base64,${currentImage.base64}`;
-            
-            await new Promise<void>((resolve, reject) => {
-                image.onload = () => resolve();
-                image.onerror = reject;
-            });
-
-            const W_orig = image.naturalWidth;
-            const H_orig = image.naturalHeight;
-            const R_orig = W_orig / H_orig;
-
-            const [ratioW, ratioH] = aspectRatio.split(':').map(Number);
-            const R_target = ratioW / ratioH;
-
-            let W_new: number, H_new: number;
-            if (R_target > R_orig) {
-                H_new = H_orig;
-                W_new = H_orig * R_target;
-            } else {
-                W_new = W_orig;
-                H_new = W_orig / R_target;
-            }
-
-            const canvas = document.createElement('canvas');
-            canvas.width = W_new;
-            canvas.height = H_new;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) throw new Error("Kunde inte skapa canvas-kontext.");
-
-            // Fill with a gray background so AI knows what areas to extend
-            ctx.fillStyle = '#808080';
-            ctx.fillRect(0, 0, W_new, H_new);
-
-            const dx = (W_new - W_orig) / 2;
-            const dy = (H_new - H_orig) / 2;
-            ctx.drawImage(image, dx, dy, W_orig, H_orig);
-
-            // Downscale canvas if it exceeds API generation limits (max 1536px)
-            const finalCanvas = downscaleCanvasForAPI(canvas);
-
-            const compositeBase64 = finalCanvas.toDataURL('image/png').split(',')[1];
-            const compositeMimeType = 'image/png';
-            
-            setLoadingMessage(`AI expanderar bilden till ${aspectRatio}...`);
-            
-            // Create a prompt that asks AI to extend the scene into the gray areas
-            const promptTemplate = `Photorealistic image outpainting to ${aspectRatio} aspect ratio. The center shows the main subject/scene. The GRAY BORDER AREAS need to be filled with a natural extension of the scene - imagine what would exist beyond the edges and seamlessly blend it in. Match the lighting, style, colors, and atmosphere of the center image perfectly. Context: \${description}`;
-            
-            const expandPrompt = buildPromptWithDescription(
-              promptTemplate,
-              imageDescription,
-              '\${description}'
-            );
-            
-            const result = await editImageWithPrompt(compositeBase64, compositeMimeType, expandPrompt);
-            
-            // Now overlay the exact original image on top to ensure perfect preservation
-            setLoadingMessage(`Återställer original i centrum...`);
-            
-            const generatedImage = new Image();
-            generatedImage.src = `data:${result.mimeType};base64,${result.base64}`;
-            
-            await new Promise<void>((resolve, reject) => {
-                generatedImage.onload = () => resolve();
-                generatedImage.onerror = reject;
-            });
-            
-            // Create final canvas
-            const overlayCanvas = document.createElement('canvas');
-            overlayCanvas.width = generatedImage.naturalWidth;
-            overlayCanvas.height = generatedImage.naturalHeight;
-            const overlayCtx = overlayCanvas.getContext('2d');
-            if (!overlayCtx) throw new Error("Kunde inte skapa canvas-kontext.");
-            
-            // Draw the AI-generated extended image
-            overlayCtx.drawImage(generatedImage, 0, 0);
-            
-            // Calculate where to place the original image (centered)
-            const scale = Math.min(
-                overlayCanvas.width / W_orig,
-                overlayCanvas.height / H_orig
-            );
-            const scaledW = W_orig * scale;
-            const scaledH = H_orig * scale;
-            const centerX = (overlayCanvas.width - scaledW) / 2;
-            const centerY = (overlayCanvas.height - scaledH) / 2;
-            
-            // Draw the original image on top to preserve it exactly
-            overlayCtx.drawImage(image, centerX, centerY, scaledW, scaledH);
-            
-            // Resize to target aspect ratio
-            setLoadingMessage(`Anpassar bildstorlek till ${aspectRatio}...`);
+            // Calculate target dimensions based on aspect ratio
             const targetDimensions = calculateAspectRatioDimensions(aspectRatio);
-            const finalBase64 = overlayCanvas.toDataURL('image/png').split(',')[1];
             
-            const resizedResult = await resizeImageToAspectRatio(
-                finalBase64,
-                'image/png',
+            // Create a detailed outpainting prompt
+            const outpaintPrompt = `${imageDescription}. Seamlessly extend this scene beyond the borders, maintaining consistent lighting, style, colors, and atmosphere. Fill the expanded areas naturally as if the scene continues.`;
+            
+            setLoadingMessage(`Expanderar bilden till ${aspectRatio} med Hugging Face Stable Diffusion...`);
+            
+            // Use Hugging Face outpainting for proper image expansion
+            const result = await outpaintImage(
+                currentImage.base64,
+                currentImage.mimeType,
                 targetDimensions.width,
-                targetDimensions.height
+                targetDimensions.height,
+                outpaintPrompt
             );
             
-            addEditToHistory({ ...resizedResult, id: `expand-${Date.now()}` });
+            addEditToHistory({ ...result, id: `expand-${Date.now()}` });
 
         } catch (err: any) {
             setError(err.message || "Ett okänt fel inträffade vid expandering.");
