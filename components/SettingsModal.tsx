@@ -66,7 +66,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
         
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            xAI API-nyckel (för allmän bildredigering)
+            xAI API-nyckel (för bildanalys)
           </label>
           <div className="relative">
             <input
@@ -98,7 +98,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
 
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Hugging Face API-nyckel (för inpainting/outpainting)
+            Hugging Face API-nyckel (för bildgenerering)
           </label>
           <div className="relative">
             <input
@@ -130,14 +130,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
 
         <div className="bg-gray-900 p-3 rounded-md mb-4 text-sm text-gray-300">
           <p className="text-xs text-gray-400 mb-2">
-            <strong>💡 API-användning:</strong>
+            <strong>💡 Hybrid AI-användning:</strong>
           </p>
           <ul className="list-disc list-inside space-y-1 text-xs text-gray-400">
             <li>
-              <strong>xAI</strong> - Används för allmän bildredigering och bildanalys
+              <strong>Grok 4</strong> - Analyserar och förstår bilder (vision)
             </li>
             <li>
-              <strong>Hugging Face</strong> - Används för inpainting och bildexpansion (bättre kvalitet)
+              <strong>Hugging Face</strong> - Genererar och redigerar bilder (Stable Diffusion)
+            </li>
+            <li>
+              <strong>Tillsammans</strong> - Bästa kvalitet + lägre kostnad (60-75% besparing)
             </li>
           </ul>
           <p className="text-xs text-gray-500 mt-2">

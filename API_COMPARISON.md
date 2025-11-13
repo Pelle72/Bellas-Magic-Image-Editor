@@ -6,7 +6,11 @@ This document compares xAI's Grok API with Hugging Face Inference API for image 
 
 **Problem**: xAI's Grok API generates completely new images during inpainting and expanding operations instead of preserving the original image content.
 
-**Solution**: Use Hugging Face's Stable Diffusion Inpainting models for operations that require precise image preservation (inpainting and outpainting), while keeping xAI for general image editing and analysis.
+**Solution**: Implement a **hybrid AI approach** that combines the strengths of both APIs:
+- **Grok 4**: Image analysis, scene understanding, and prompt generation (what it excels at)
+- **Hugging Face**: All image generation, editing, inpainting, and outpainting (what it excels at)
+
+This approach provides superior results compared to using either API alone.
 
 ## Pricing Comparison
 
@@ -110,42 +114,53 @@ This document compares xAI's Grok API with Hugging Face Inference API for image 
 
 ## Implementation Strategy
 
-Based on the comparison, we use a **hybrid approach**:
+Based on the comparison, we use a **hybrid approach** that maximizes the strengths of each API:
 
-### xAI Grok is used for:
-1. **Image analysis** - Analyzing images to create detailed descriptions
-2. **General image editing** - Text-driven image modifications
+### Grok 4 is used for:
+1. **Image analysis** - Analyzing images to create detailed descriptions (Grok-4-fast-reasoning)
+2. **Scene understanding** - Understanding composition, lighting, style, and content
 3. **Translation** - Swedish to English prompt translation
-4. **Multi-image fusion** - Creating composite images from multiple sources
+4. **Prompt engineering** - Creating detailed generation prompts
 
 ### Hugging Face is used for:
-1. **Inpainting** - Editing specific masked areas while preserving the rest
-2. **Outpainting/Expansion** - Extending images beyond their borders
-3. **Image-to-image operations** - Tasks requiring precise preservation
+1. **All image generation** - Text-to-image using Stable Diffusion XL
+2. **Image editing** - Image-to-image modifications with inpainting
+3. **Inpainting** - Editing specific masked areas while preserving the rest
+4. **Outpainting/Expansion** - Extending images beyond their borders
+5. **Multi-image fusion** - Creating composite images (after Grok analysis)
 
-This hybrid approach leverages the strengths of both APIs:
-- xAI's excellent vision and analysis capabilities
-- Hugging Face's superior inpainting/outpainting quality
-- Cost optimization (using the cheaper service for each task type)
+### Workflow Example: Edit Image with Prompt
+1. **User provides**: Original image + edit request ("change background to sunset beach")
+2. **Grok analyzes**: Creates detailed description of the image
+3. **Hybrid service**: Combines Grok's analysis with user's request
+4. **Hugging Face generates**: Edited image using inpainting model
+5. **Result**: High-quality edit that preserves original image integrity
+
+This hybrid approach leverages:
+- Grok's superior vision and understanding capabilities
+- Hugging Face's superior image generation quality
+- Cost optimization (using the cheaper/better service for each task type)
+- Better overall results than either API alone
 
 ---
 
 ## Cost Estimation Examples
 
 ### Scenario 1: Simple Image Expansion (16:9)
-- **xAI only**: ~$0.10 (analysis + generation)
-- **Hybrid (xAI + HF)**: ~$0.05 + $0.005 = ~$0.055
-- **Savings**: ~45%
+- **Grok only**: ~$0.10 (analysis + generation, generates new image)
+- **Hybrid (Grok analysis + HF outpainting)**: ~$0.03 + $0.005 = ~$0.035
+- **Savings**: ~65% + better quality (preserves original)
 
-### Scenario 2: Complex Inpainting
-- **xAI only**: ~$0.15 (generates new image)
-- **Hybrid (xAI + HF)**: ~$0.03 + $0.008 = ~$0.038
-- **Savings**: ~75%
+### Scenario 2: Complex Image Editing
+- **Grok only**: ~$0.15 (generates completely new image)
+- **Hybrid (Grok analysis + HF inpainting)**: ~$0.03 + $0.008 = ~$0.038
+- **Savings**: ~75% + preserves original image
 
-### Scenario 3: General Image Edit (no inpainting)
-- **xAI only**: ~$0.08
+### Scenario 3: Text-to-Image Generation
+- **Grok only**: ~$0.12
 - **HF only**: ~$0.015
-- **Winner**: Varies by use case (xAI better for analysis-heavy tasks)
+- **Hybrid (Grok prompt + HF generation)**: ~$0.02 + $0.015 = ~$0.035
+- **Savings**: ~70%
 
 ---
 
@@ -170,10 +185,16 @@ Both keys can be entered through the Settings modal (⚙️ icon) in the applica
 ## Conclusion
 
 The hybrid approach provides:
-- ✅ **Better quality** for inpainting/outpainting (preserves original images)
-- ✅ **Lower costs** for image-to-image operations (~50-75% savings)
-- ✅ **Maintained quality** for analysis and general editing
+- ✅ **Best quality** for all image generation tasks (uses proper inpainting/outpainting)
+- ✅ **Lower costs** (60-75% savings compared to Grok-only)
+- ✅ **Superior image preservation** (original images maintained during edits)
+- ✅ **Leverages strengths** of both APIs (Grok for analysis, HF for generation)
 - ✅ **Permissive content policies** from both providers
-- ✅ **Flexibility** to use the best tool for each task
+- ✅ **Future-proof** architecture with best-in-class tools
 
-**Total estimated savings**: 40-60% on average compared to xAI-only implementation, while significantly improving inpainting and outpainting quality.
+**Architecture**: Hybrid Service Layer
+```
+User Request → Grok 4 (Analysis) → Hugging Face (Generation) → Result
+```
+
+**Total estimated savings**: 60-75% on average compared to Grok-only implementation, with significantly better quality for all image generation operations.
