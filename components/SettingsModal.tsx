@@ -92,7 +92,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
               <strong>grok-4-fast-reasoning</strong> - Bäst balans mellan kvalitet och kostnad för bildanalys
             </li>
             <li>
-              <strong>grok-4-fast-non-reason</strong> - Snabbast och billigast för enkla uppgifter
+              <strong>grok-4-fast-non-reasoning</strong> - Snabbast och billigast för enkla uppgifter
             </li>
             <li>
               <strong>grok-2-image-1212</strong> - För bildgenerering med "Spicy Mode"

@@ -211,7 +211,7 @@ export const translateToEnglish = async (text: string): Promise<string> => {
 
   try {
     const response = await client.chat.completions.create({
-      model: "grok-4-fast-non-reason", // Use the fast non-reasoning model for translation
+      model: "grok-4-fast-non-reasoning", // Use the fast non-reasoning model for translation
       messages: [
         {
           role: "system",
