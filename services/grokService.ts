@@ -124,7 +124,7 @@ Respond ONLY with the image generation prompt, no other text.`
     let response;
     try {
       response = await client.images.generate({
-        model: "grok-2-image-1212",
+        model: "grok-2-image",  // Use the canonical model name
         prompt: truncatedPrompt,
         n: 1,
         response_format: "url"
@@ -134,7 +134,7 @@ Respond ONLY with the image generation prompt, no other text.`
       console.error('[editImageWithPrompt] Image generation failed:', genError);
       // Provide more specific error message
       if (genError.status === 404) {
-        throw new Error("AI:n kunde inte generera bilden: Bildgenerering stöds inte av denna API-version. Kontrollera att din API-nyckel har tillgång till grok-2-image-1212 modellen.");
+        throw new Error("AI:n kunde inte generera bilden: Bildgenerering stöds inte av denna API-version. Kontrollera att din API-nyckel har tillgång till grok-2-image modellen.");
       }
       throw genError; // Re-throw to be caught by outer catch block
     }
@@ -377,7 +377,7 @@ export const createImageFromMultiple = async (
     // Images are generated at the API's default resolution.
     // Content policy is inherently permissive for fashion, swimwear, and artistic content.
     const generationResponse = await client.images.generate({
-      model: "grok-2-image-1212",
+      model: "grok-2-image",  // Use the canonical model name
       prompt: truncatedFusionPrompt,
       n: 1,
       response_format: "url"
