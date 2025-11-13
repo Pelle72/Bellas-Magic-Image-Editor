@@ -112,7 +112,8 @@ Respond ONLY with the image generation prompt, no other text.`
     const response = await client.images.generate({
       model: "grok-2-image-1212",
       prompt: truncatedPrompt,
-      n: 1
+      n: 1,
+      size: "1024x1024"
     });
 
     if (!response.data || response.data.length === 0) {
@@ -305,7 +306,8 @@ export const createImageFromMultiple = async (
     const generationResponse = await client.images.generate({
       model: "grok-2-image-1212",
       prompt: truncatedFusionPrompt,
-      n: 1
+      n: 1,
+      size: "1024x1024"
     });
 
     if (!generationResponse.data || generationResponse.data.length === 0) {
