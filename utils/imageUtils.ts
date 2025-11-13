@@ -146,7 +146,11 @@ export const downscaleImage = (
 
 /**
  * Determine the best image generation size based on input image dimensions
- * Returns a size string compatible with xAI Grok API (e.g., "1024x1024")
+ * Returns a size string compatible with OpenAI-style APIs (e.g., "1024x1024")
+ * 
+ * NOTE: This function is currently NOT used by xAI Grok API, as the xAI API
+ * does not support the 'size' parameter. Images are generated at the API's default resolution.
+ * This function is kept for potential future use or compatibility with other APIs.
  */
 export const determineGenerationSize = (width: number, height: number): GenerationSize => {
   const aspectRatio = width / height;
