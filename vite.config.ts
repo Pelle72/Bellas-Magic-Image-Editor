@@ -5,6 +5,9 @@ import react from '@vitejs/plugin-react';
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
+      // Set base for GitHub Pages deployment
+      // Change 'Bellas-Magic-Image-Editor' to your actual repo name if different
+      base: mode === 'production' ? '/Bellas-Magic-Image-Editor/' : '/',
       server: {
         port: 3000,
         host: '0.0.0.0',

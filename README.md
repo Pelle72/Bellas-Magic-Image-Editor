@@ -47,6 +47,22 @@ This app has been migrated from Google Gemini API to xAI's Grok API for signific
 - **Multi-image Sessions** - Work with multiple images simultaneously
 - **Undo/Redo** - Full edit history for each image
 
+## Deploy to GitHub Pages
+
+**Yes! This app can be deployed to GitHub Pages for free.**
+
+### Quick Deploy:
+
+1. Enable GitHub Pages in your repository settings (Settings → Pages → Source: GitHub Actions)
+2. Push to the `main` branch
+3. Your app will be live at: `https://[your-username].github.io/Bellas-Magic-Image-Editor/`
+
+The repository includes an automated GitHub Actions workflow that builds and deploys on every push to main.
+
+**No API key needed in deployment** - Users enter their own keys via the settings modal (⚙️ icon).
+
+📖 See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions and troubleshooting.
+
 ## Cost Comparison
 
 | Provider | Input (per 1M tokens) | Output (per 1M tokens) | Content Policy |
@@ -54,3 +70,9 @@ This app has been migrated from Google Gemini API to xAI's Grok API for signific
 | Gemini 2.5 Pro | $2.50 | $10.00 | Very Restrictive |
 | OpenAI GPT-4o | $2.50 | $10.00 | Restrictive |
 | **Grok-4 Fast** | **$0.20-$0.40** | **$0.50-$1.00** | **Permissive** |
+
+## Total Hosting Cost
+
+- 🎉 **$0/month** - Free GitHub Pages hosting
+- 🎉 **$0** - Users pay for their own xAI API usage
+- 🎉 **$0** - No backend server required
