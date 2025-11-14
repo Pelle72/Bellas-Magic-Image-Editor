@@ -31,6 +31,7 @@ This app uses an **intelligent hybrid strategy** that leverages the unique stren
 
 **Want higher quality and NSFW support?** 
 - Set up a [Custom Inference Endpoint](./CUSTOM_ENDPOINT_SETUP.md) ($0.60-$1.30/hour)
+- ⚠️ **IMPORTANT**: Requires GPU instance (T4, A10G, or A100) - CPU instances will NOT work
 - Enable SDXL (1024x1024) and NSFW XL models
 - Configure via Settings → Custom Inference Endpoint
 
