@@ -51,8 +51,14 @@ https://endpoints.huggingface.co/JohnDcc/endpoints/dedicated
 - **Azure**: `https://xxxxx.eastus.azure.endpoints.huggingface.cloud`
 - ⚠️ **Google Cloud Not Recommended**: Limited GPU options
 
-### Model Configured
-`stabilityai/stable-diffusion-xl-base-1.0`
+### Model Configured on Your Endpoint
+Your endpoint may have one of these SDXL model variants:
+- `stabilityai/stable-diffusion-xl-base-1.0` (standard SDXL)
+- `stable-diffusion-xl-base-1-0-clr` (SDXL variant)
+- `stabilityai/sdxl-turbo` (faster variant)
+- Other SDXL-based models
+
+**Important**: When using a custom endpoint, the model is already deployed on the endpoint. The app sends requests to your endpoint URL, which automatically uses whatever model you deployed. You don't need to change the model name in the code unless you encounter issues.
 
 ### Step-by-Step
 
@@ -64,8 +70,8 @@ https://endpoints.huggingface.co/JohnDcc/endpoints/dedicated
    - **Custom Inference Endpoint**: `https://xxxxx.us-east-1.aws.endpoints.huggingface.cloud` (your actual URL)
 4. Click **Spara** (Save)
 
-#### 2. Model is Automatically Configured
-The code now automatically uses `stabilityai/stable-diffusion-xl-base-1.0` when your custom endpoint is detected. No manual code changes needed!
+#### 2. Model is Automatically Handled
+When you configure a custom endpoint, the app automatically routes requests to your endpoint URL. The endpoint uses whatever model you deployed (e.g., `stable-diffusion-xl-base-1-0-clr`, `stabilityai/stable-diffusion-xl-base-1.0`, etc.). No code changes are needed!
 
 #### 3. First Use - Model Loading
 - **First image generation**: 30-60 seconds (model loading from cold start)

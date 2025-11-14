@@ -43,32 +43,39 @@ Visit: https://huggingface.co/settings/tokens
 
 ---
 
-### 4️⃣ Update Model in Code
+### 4️⃣ Model Configuration (Optional)
 
-**Find out which model your endpoint uses:**
+**Good News**: When using a custom endpoint, the app automatically sends requests to your endpoint URL, which uses whatever model you deployed. You typically **don't need to change any code**!
+
+**Check your deployed model** (for reference):
 
 On the endpoint dashboard, look for:
 - **Model Repository** or **Model** field
-- Example: `stablediffusionapi/omnigenxl-nsfw-sfw`
+- Common examples:
+  - `stable-diffusion-xl-base-1-0-clr` (SDXL variant)
+  - `stabilityai/stable-diffusion-xl-base-1.0` (standard SDXL)
+  - `stablediffusionapi/omnigenxl-nsfw-sfw` (NSFW variant)
 
-**Update the code:**
+**Only update code if you encounter issues:**
 
-Edit `/services/huggingFaceService.ts`:
+If you get errors, you can specify the exact model name in `/services/huggingFaceService.ts`:
 
-**Line ~528 (Text-to-Image):**
+**Line ~531 (Text-to-Image):**
 ```typescript
-const model = 'stablediffusionapi/omnigenxl-nsfw-sfw';  // Use YOUR model name
+const model = 'stable-diffusion-xl-base-1-0-clr';  // Use YOUR exact model name
 ```
 
-**Line ~293 (Inpainting) - if applicable:**
+**Line ~296 (Inpainting):**
 ```typescript
-const model = 'diffusers/stable-diffusion-xl-1.0-inpainting-0.1';  // Use YOUR model name
+const model = 'stable-diffusion-xl-base-1-0-clr';  // Use YOUR exact model name
 ```
 
-**Rebuild:**
+Then rebuild:
 ```bash
 npm run build
 ```
+
+**Note**: Most users won't need to do this - the endpoint URL is sufficient.
 
 ---
 

@@ -168,13 +168,15 @@ Dedicated endpoints require payment:
 **Basic Settings:**
 - **Name**: Choose a descriptive name (e.g., "bella-nsfw-xl")
 - **Model Repository**: Select your model (see recommendations below)
-- **Cloud Provider**: **AWS (Recommended)** or Azure
-  - ⚠️ **Avoid Google Cloud**: Limited GPU availability and more restrictive instance options
-  - AWS has best GPU availability and pricing
-  - Azure is acceptable alternative
+- **Cloud Provider**: **AWS (Recommended)** or Azure or Google Cloud
+  - ⚠️ **ALL providers require GPU instances** - CPU instances don't work on any cloud provider
+  - **AWS recommended**: Best GPU availability and easier provisioning
+  - **Azure acceptable**: Good alternative, slightly higher pricing
+  - **GCP acceptable**: Works but harder to get GPU instances
 - **Region**: Choose nearest to your users for lower latency
   - **AWS**: us-east-1 (N. Virginia), us-west-2 (Oregon), eu-west-1 (Ireland)
   - **Azure**: eastus, westus2, northeurope
+  - **GCP**: us-central1, europe-west4 (if GPU available)
 
 **Compute Settings:**
 
@@ -266,12 +268,14 @@ const model = 'diffusers/stable-diffusion-xl-1.0-inpainting-0.1';  // SDXL inpai
 - **Quality**: Superior anatomical accuracy
 - **Speed**: ~30-60 seconds per image
 
-#### 3. Stable Diffusion XL 1.0
+#### 3. Stable Diffusion XL 1.0 (and variants)
 - **Model ID**: `stabilityai/stable-diffusion-xl-base-1.0`
+- **Variants**: `stable-diffusion-xl-base-1-0-clr`, `stabilityai/sdxl-turbo`, etc.
 - **Resolution**: 1024x1024
 - **GPU**: A10G or better
 - **Quality**: High quality, can be used for NSFW with prompts
 - **Speed**: ~30-45 seconds per image
+- **Note**: Different SDXL variants work the same way - choose based on availability
 
 ### For Inpainting
 
