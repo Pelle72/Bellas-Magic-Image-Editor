@@ -172,10 +172,20 @@ Dedicated endpoints require payment:
 - **Region**: Choose nearest to your users for lower latency
 
 **Compute Settings:**
-- **Instance Type**: 
-  - **T4 (Small)**: $0.60/hour - Good for SD 1.5, basic SDXL
-  - **A10G (Medium)**: $1.30/hour - Best for SDXL, NSFW XL
-  - **A100 (Large)**: $4.50/hour - Overkill for most use cases
+
+⚠️ **CRITICAL: GPU REQUIRED - CPU instances will NOT work!**
+
+Stable Diffusion models **require GPU acceleration**. Do NOT select CPU instances (Intel Sapphire Rapids, AMD EPYC, etc.) as they are incompatible with image generation models.
+
+**Compatible GPU Instance Types:**
+- **T4 (Small)**: $0.60/hour - Good for SD 1.5, basic SDXL
+- **A10G (Medium)**: $1.30/hour - Best for SDXL, NSFW XL (recommended)
+- **A100 (Large)**: $4.50/hour - Overkill for most use cases
+
+**❌ Incompatible CPU Instance Types (DO NOT USE):**
+- Intel Sapphire Rapids ($0.05/hour) - Will fail with "Hardware not compatible" error
+- AMD EPYC - Will fail with "Hardware not compatible" error
+- Any CPU-only instance - Image generation requires GPU
 
 **Advanced Settings:**
 - **Auto-scaling**: 
@@ -318,11 +328,37 @@ If costs are too high, continue using the public API with the default RunwayML m
 
 ## Troubleshooting
 
+### "Hardware not compatible with selected model" Error
+
+**Error Message:**
+```
+Error in inference endpoint config: Intel Sapphire Rapids
+1x vCPU · 2 GB
+$0.05 / h
+Hardware not compatible with selected model.
+```
+
+**Cause**: You selected a CPU instance instead of a GPU instance.
+
+**Solution**: 
+1. Delete the incompatible endpoint in your Hugging Face dashboard
+2. Create a new endpoint with a **GPU instance type**:
+   - Minimum: **T4 GPU** ($0.60/hour)
+   - Recommended: **A10G GPU** ($1.30/hour)
+3. **Never select CPU instances** (Intel Sapphire Rapids, AMD EPYC, etc.) - they cannot run Stable Diffusion models
+
+**Why GPU is Required:**
+- Stable Diffusion models use neural networks that require massive parallel computation
+- GPUs provide thousands of cores for parallel processing
+- CPUs only have a few cores and will fail to run these models
+- This is a fundamental requirement, not a configuration issue
+
 ### Endpoint Not Working
 1. **Check endpoint status**: Should be "Running" in dashboard
 2. **Verify URL**: Must be exact URL from endpoint details
 3. **Check API key**: Same key used for public API
 4. **Test connection**: Run `testHFConnection()` in console
+5. **Verify GPU instance**: Must use T4, A10G, or A100 (not CPU)
 
 ### Model Loading Timeout
 - First request can take 30-60 seconds

@@ -2,6 +2,10 @@
 
 **Your endpoint dashboard:** https://endpoints.huggingface.co/JohnDcc/endpoints/dedicated
 
+⚠️ **IMPORTANT: Your endpoint MUST use a GPU instance (T4, A10G, or A100)**
+
+**DO NOT use CPU instances** (Intel Sapphire Rapids, AMD EPYC) - they are incompatible with Stable Diffusion models and will fail with "Hardware not compatible" error.
+
 ## 3-Minute Setup
 
 ### 1️⃣ Get Your Endpoint URL
@@ -83,6 +87,16 @@ Expected result:
 ---
 
 ## Common Issues
+
+### ❌ "Hardware not compatible with selected model"
+**Cause**: You selected a CPU instance (Intel Sapphire Rapids, AMD EPYC, etc.)
+
+**Solution**: 
+1. Delete the endpoint in your Hugging Face dashboard
+2. Create a new endpoint with a **GPU instance**:
+   - Minimum: **T4 GPU** ($0.60/hour)
+   - Recommended: **A10G GPU** ($1.30/hour)
+3. Stable Diffusion requires GPU - CPU instances will NEVER work
 
 ### "Failed to fetch" Error
 - ❌ Using dashboard URL instead of endpoint URL

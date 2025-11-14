@@ -103,11 +103,18 @@ With your endpoint configured:
 ✅ **Faster Generation**: After initial load  
 
 ### Cost
+⚠️ **GPU Required**: Stable Diffusion models require GPU acceleration. CPU instances ($0.05/hour) are NOT compatible.
+
+**Compatible GPU Instance Costs:**
 - **$0.60/hour** (T4 GPU - good for SD 1.5, basic SDXL)
-- **$1.30/hour** (A10G GPU - best for SDXL, NSFW XL)
+- **$1.30/hour** (A10G GPU - best for SDXL, NSFW XL, recommended)
 - Auto-scales to zero when not in use (saves money)
 - First request: 30-60 seconds (model loading)
 - Subsequent: Much faster
+
+**❌ Incompatible (DO NOT USE):**
+- **$0.05/hour** (Intel Sapphire Rapids CPU) - Will fail with "Hardware not compatible" error
+- Any CPU-only instance - Image generation requires GPU
 
 ---
 
@@ -125,6 +132,7 @@ https://endpoints.huggingface.co/JohnDcc/endpoints/dedicated
 
 **Troubleshooting:**
 - Can't find URL? → See `ENDPOINT_QUICK_START.md`
+- "Hardware not compatible" error? → You selected a CPU instance - use T4, A10G, or A100 GPU instead
 - Not working? → Check endpoint status is "Running"
 - Wrong model? → Check "Model Repository" on dashboard
 
