@@ -298,28 +298,31 @@ export const inpaintImage = async (
     
     console.log('[inpaintImage] API URL:', customEndpoint ? 'Custom Endpoint' : apiUrl);
 
-    // The Hugging Face Inference API expects JSON with base64-encoded images
-    // Format: { inputs: { image: "base64", mask: "base64", prompt: "text" } }
-    const payload = {
-      inputs: {
-        image: processedImageData,
-        mask: processedMaskData,
-        prompt: prompt
-      }
-    };
+    // The Hugging Face Inference API for inpainting expects binary data as FormData
+    // Convert base64 images to Blobs and send as multipart/form-data
+    const imageBlob = base64ToBlob(processedImageData, processedMimeType);
+    const maskBlob = base64ToBlob(processedMaskData, 'image/png');
+    
+    // Create FormData with the required fields
+    const formData = new FormData();
+    formData.append('image', imageBlob, 'image.png');
+    formData.append('mask', maskBlob, 'mask.png');
+    formData.append('prompt', prompt);
 
     console.log('[inpaintImage] Sending request to Hugging Face API...');
     console.log('[inpaintImage] API URL:', apiUrl);
     console.log('[inpaintImage] API Key present:', !!apiKey);
     console.log('[inpaintImage] API Key prefix:', apiKey ? apiKey.substring(0, 10) + '...' : 'none');
+    console.log('[inpaintImage] Image blob size:', imageBlob.size, 'bytes');
+    console.log('[inpaintImage] Mask blob size:', maskBlob.size, 'bytes');
     
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
+        // Don't set Content-Type - let the browser set it with boundary for multipart/form-data
       },
-      body: JSON.stringify(payload),
+      body: formData,
       mode: 'cors', // Explicitly set CORS mode
       credentials: 'omit' // Don't send cookies
     });
@@ -345,6 +348,14 @@ export const inpaintImage = async (
     // Response is image blob
     const resultBlob = await response.blob();
     console.log('[inpaintImage] Result blob size:', resultBlob.size, 'bytes');
+    console.log('[inpaintImage] Result blob type:', resultBlob.type);
+    
+    // Validate that we got actual image data
+    if (resultBlob.size === 0) {
+      console.error('[inpaintImage] Received empty blob (0 bytes)');
+      throw new Error('Hugging Face API returnerade en tom bild. Detta kan bero på fel format eller modellproblem.');
+    }
+    
     const resultBase64 = await blobToBase64(resultBlob);
 
     console.log('[inpaintImage] Inpainting completed successfully');
@@ -574,6 +585,15 @@ export const generateImageFromText = async (
 
     // Response is image blob
     const resultBlob = await response.blob();
+    console.log('[generateImageFromText] Result blob size:', resultBlob.size, 'bytes');
+    console.log('[generateImageFromText] Result blob type:', resultBlob.type);
+    
+    // Validate that we got actual image data
+    if (resultBlob.size === 0) {
+      console.error('[generateImageFromText] Received empty blob (0 bytes)');
+      throw new Error('Hugging Face API returnerade en tom bild. Detta kan bero på fel format eller modellproblem.');
+    }
+    
     const resultBase64 = await blobToBase64(resultBlob);
 
     console.log('[generateImageFromText] Image generation completed successfully');
