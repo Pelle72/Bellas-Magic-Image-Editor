@@ -61,6 +61,14 @@ Common error patterns:
 - Regenerate your token at [Hugging Face Settings](https://huggingface.co/settings/tokens)
 - Make sure you're using an **Access Token**, not an API endpoint URL
 
+#### "Body needs to provide a inputs key" (400 error)
+**Cause**: When using custom Hugging Face inference endpoints for inpainting, the API expects data in a different format than the public API
+**Solution**: 
+- This has been fixed in the latest version of the code (v1.1.0+)
+- The application now automatically detects when using custom endpoints and formats requests correctly
+- If you still see this error, ensure you're using the latest version of the application
+- For reference: Custom endpoints expect `{inputs: {prompt, image, mask_image}}` while public API expects `{prompt, image, mask_image}`
+
 #### Network errors (ERR_NAME_NOT_RESOLVED, ERR_CONNECTION_REFUSED)
 **Cause**: DNS or connectivity issue
 **Solutions**:
