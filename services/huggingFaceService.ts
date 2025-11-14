@@ -329,12 +329,21 @@ export const inpaintImage = async (
     console.log('[inpaintImage] API URL:', customInpaintingEndpoint || customEndpoint ? 'Custom Endpoint' : apiUrl);
 
     // The Hugging Face Inference API for inpainting expects JSON with base64-encoded images
-    // Create the payload with the correct field names: prompt, image, mask_image (all at top level)
-    const payload = {
-      prompt: prompt,
-      image: processedImageData,
-      mask_image: processedMaskData
-    };
+    // Custom endpoints expect data wrapped in "inputs" object, public API expects direct fields
+    const isUsingCustomEndpoint = !!(customInpaintingEndpoint || customEndpoint);
+    const payload = isUsingCustomEndpoint
+      ? {
+          inputs: {
+            prompt: prompt,
+            image: processedImageData,
+            mask_image: processedMaskData
+          }
+        }
+      : {
+          prompt: prompt,
+          image: processedImageData,
+          mask_image: processedMaskData
+        };
 
     console.log('[inpaintImage] Sending request to Hugging Face API...');
     console.log('[inpaintImage] Prompt:', prompt);
