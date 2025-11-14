@@ -282,21 +282,17 @@ export const inpaintImage = async (
       console.log(`[inpaintImage] Downscaled to ${width}x${height}`);
     }
 
-    // Use Stable Diffusion Inpainting model
-    // When using custom endpoint, use SDXL inpainting model for better quality
-    // Default to SD 1.5 inpainting for public API (most reliable)
-    const customEndpoint = getHFCustomEndpoint();
-    const model = customEndpoint
-      ? 'diffusers/stable-diffusion-xl-1.0-inpainting-0.1'  // SDXL inpainting for custom endpoints
-      : 'runwayml/stable-diffusion-inpainting';              // SD 1.5 inpainting for public API
+    // Use Stable Diffusion Inpainting model via public API
+    // NOTE: Custom endpoints are typically deployed with text-to-image models (e.g., SDXL base)
+    // which don't support inpainting operations. Therefore, we always use the public API's
+    // dedicated inpainting model for reliable inpainting, regardless of custom endpoint settings.
+    // Custom endpoints are used only for text-to-image generation (generateImageFromText).
+    const model = 'runwayml/stable-diffusion-inpainting';  // SD 1.5 inpainting - most reliable
+    const apiUrl = `https://api-inference.huggingface.co/models/${model}`;
     
     console.log('[inpaintImage] Model:', model);
-    
-    const apiUrl = customEndpoint 
-      ? customEndpoint  // Use custom endpoint directly
-      : `https://api-inference.huggingface.co/models/${model}`;  // Use public API with model
-    
-    console.log('[inpaintImage] API URL:', customEndpoint ? 'Custom Endpoint' : apiUrl);
+    console.log('[inpaintImage] API URL:', apiUrl);
+    console.log('[inpaintImage] Note: Using public API for inpainting (custom endpoints typically only support text-to-image)');
 
     // The Hugging Face Inference API for inpainting expects binary data as FormData
     // Convert base64 images to Blobs and send as multipart/form-data
