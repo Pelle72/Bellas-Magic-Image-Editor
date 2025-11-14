@@ -329,7 +329,7 @@ export const inpaintImage = async (
 
     // Use custom inpainting endpoint if configured, otherwise use general custom endpoint, otherwise use public API
     // Priority: Custom Inpainting Endpoint > General Custom Endpoint > Public API
-    // Both use FormData format for inpainting models
+    // Both use JSON format with base64-encoded images for inpainting models
     // For NSFW inpainting on custom endpoint, deploy: diffusers/stable-diffusion-xl-1.0-inpainting-0.1
     const customInpaintingEndpoint = getHFCustomInpaintingEndpoint();
     const customEndpoint = getHFCustomEndpoint();
@@ -339,27 +339,28 @@ export const inpaintImage = async (
     console.log('[inpaintImage] Using general custom endpoint:', !customInpaintingEndpoint && !!customEndpoint);
     console.log('[inpaintImage] API URL:', customInpaintingEndpoint || customEndpoint ? 'Custom Endpoint' : apiUrl);
 
-    // The Hugging Face Inference API for inpainting expects binary data as FormData
+    // The Hugging Face Inference API for inpainting expects JSON with base64-encoded images
     // This works for both public API and custom endpoints with inpainting models deployed
-    const imageBlob = base64ToBlob(processedImageData, processedMimeType);
-    const maskBlob = base64ToBlob(processedMaskData, 'image/png');
-    
-    const formData = new FormData();
-    formData.append('image', imageBlob, 'image.png');
-    formData.append('mask', maskBlob, 'mask.png');
-    formData.append('prompt', prompt);
+    const payload = {
+      inputs: {
+        prompt: prompt,
+        image: processedImageData,
+        mask_image: processedMaskData
+      }
+    };
 
     console.log('[inpaintImage] Sending request to Hugging Face API...');
-    console.log('[inpaintImage] Image blob size:', imageBlob.size, 'bytes');
-    console.log('[inpaintImage] Mask blob size:', maskBlob.size, 'bytes');
+    console.log('[inpaintImage] Prompt:', prompt);
+    console.log('[inpaintImage] Image data length:', processedImageData.length, 'chars');
+    console.log('[inpaintImage] Mask data length:', processedMaskData.length, 'chars');
     
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
-        // Don't set Content-Type - let the browser set it with boundary for multipart/form-data
+        'Content-Type': 'application/json',
       },
-      body: formData,
+      body: JSON.stringify(payload),
       mode: 'cors',
       credentials: 'omit'
     });
