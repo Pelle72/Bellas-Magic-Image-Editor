@@ -345,9 +345,9 @@ export const inpaintImage = async (
     const maskBlob = base64ToBlob(processedMaskData, 'image/png');
 
     const formData = new FormData();
-    formData.append('inputs', prompt);
     formData.append('image', imageBlob, 'image.png');
     formData.append('mask', maskBlob, 'mask.png');
+    formData.append('prompt', prompt);
 
     console.log('[inpaintImage] Sending request to Hugging Face API...');
     console.log('[inpaintImage] Prompt:', prompt);
