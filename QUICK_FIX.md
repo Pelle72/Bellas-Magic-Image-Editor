@@ -35,11 +35,12 @@ Click "Create new endpoint" and use these **exact settings**:
 ```
 Model Repository: stabilityai/stable-diffusion-xl-base-1.0
 
-Cloud Provider: Azure  ← IMPORTANT: Use Azure, not AWS/GCP
+Cloud Provider: AWS  ← Use AWS or Google Cloud (Azure may not show GPU options)
 
-Region: West Europe
+Region: us-east-1  ← For AWS (or us-central1 for Google Cloud)
 
 Instance Type: GPU [medium]  ← CRITICAL: Must say "GPU" not "CPU"
+                              (Or ml.g5.xlarge for AWS)
 
 Advanced Settings:
 - Min replicas: 0

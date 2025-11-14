@@ -46,7 +46,22 @@ stabilityai/stable-diffusion-xl-base-1.0
 
 **Cloud Provider (IMPORTANT):**
 
-Choose **Azure** (most reliable for GPU instances):
+**Note:** GPU availability varies by cloud provider and your account. If one provider doesn't show GPU options, try another.
+
+Recommended options (in order):
+1. **AWS** - Good GPU availability (ml.g5.xlarge with A10G GPU)
+2. **Google Cloud** - Has compatible GPUs (T4, A100)
+3. **Azure** - May not show GPU options for all users
+
+**For AWS:**
+- Cloud Provider: **AWS**
+- Region: **us-east-1** (North Virginia) or **us-west-2** (Oregon)
+
+**For Google Cloud:**
+- Cloud Provider: **Google Cloud**
+- Region: **us-central1** or **us-west1**
+
+**For Azure (if available):**
 - Cloud Provider: **Azure**
 - Region: **West Europe** or **East US 2**
 
@@ -132,31 +147,34 @@ Price: ~$0.30/hour
 
 ## Cloud Provider Specific Instructions
 
-### Option 1: Azure (RECOMMENDED - Easiest)
+### Option 1: AWS (RECOMMENDED - Best GPU Availability)
 
-**Why Azure:**
-- Shows GPU options clearly
-- Best GPU availability
-- Most reliable for SDXL
+**Why AWS:**
+- Reliable GPU instance availability
+- ml.g5.xlarge instances with A10G GPUs work well for SDXL
+- Good regional coverage
 
 **Steps:**
-1. Cloud Provider: **Azure**
-2. Region: **West Europe** (or East US 2, UK South)
-3. Instance Type dropdown - select **"GPU [medium]"**
+1. Cloud Provider: **AWS**
+2. Region: **us-east-1** (North Virginia) - best GPU availability
+3. Instance Type: Look for **ml.g5.xlarge** or **GPU [medium]**
 
-You should see something like:
-```
-GPU [small] - NVIDIA T4, 16GB VRAM
-GPU [medium] - NVIDIA A10, 24GB VRAM ← Select this
-GPU [large] - NVIDIA A100, 40GB VRAM
-```
+AWS instance types that work for SDXL:
+- ✅ **ml.g5.xlarge** (A10G GPU, 24GB VRAM) ← Best choice
+- ✅ **ml.g5.2xlarge** (A10G GPU, 24GB VRAM, more CPU)
+- ✅ **ml.p3.2xlarge** (V100 GPU, 16GB VRAM)
 
-**If you don't see "GPU" options in the dropdown:**
-- Try different Azure region
-- Make sure billing is enabled
-- Azure might be out of GPU capacity in that region
+AWS instances to AVOID (CPU only):
+- ❌ ml.t2.*, ml.t3.* (CPU only)
+- ❌ ml.m5.*, ml.c5.*, ml.r5.* (CPU only)
+- ❌ ml.inf1.* (Inferentia chips, not compatible with SDXL)
 
-### Option 2: AWS (If Azure doesn't work)
+**AWS regions with best GPU availability:**
+- us-east-1 (North Virginia)
+- us-west-2 (Oregon)
+- eu-west-1 (Ireland)
+
+### Option 2: Google Cloud (Good Alternative)
 
 **Steps:**
 1. Cloud Provider: **AWS**
@@ -179,18 +197,32 @@ AWS instances to AVOID (CPU only):
 - us-west-2 (Oregon)
 - eu-west-1 (Ireland)
 
-### Option 3: Google Cloud (Least Reliable)
+**Why Google Cloud:**
+- Has compatible GPUs (T4, A100)
+- Can work well when GPU options are available
 
-**Not recommended** - Google Cloud integration with Hugging Face often doesn't show GPU options clearly.
-
-If you must use GCP:
+**Steps:**
 1. Cloud Provider: **Google Cloud**
 2. Region: **us-central1**
 3. Look for instance with **"NVIDIA T4"** or **"NVIDIA A100"** explicitly mentioned
 
-**If GCP doesn't work:**
-- Switch to Azure or AWS
-- Or use immers.cloud/RunPod instead (see below)
+**GCP regions with GPU availability:**
+- us-central1
+- us-west1
+- europe-west4
+
+### Option 3: Azure (May Not Be Available)
+
+**Note:** Some users report that Azure doesn't show GPU instances in Hugging Face's interface.
+
+**If Azure is available:**
+1. Cloud Provider: **Azure**
+2. Region: **West Europe** (or East US 2, UK South)
+3. Instance Type: Look for **"GPU [medium]"**
+
+**If Azure doesn't show GPU options:**
+- This is normal - not all users have access to Azure GPUs through Hugging Face
+- Use AWS or Google Cloud instead (both have compatible GPUs)
 
 ---
 
@@ -210,8 +242,9 @@ If you must use GCP:
 
 3. **Region has no GPUs**
    - Try different region
-   - Azure: West Europe, East US 2, UK South
-   - AWS: us-east-1, us-west-2
+   - AWS: us-east-1, us-west-2, eu-west-1
+   - Google Cloud: us-central1, us-west1
+   - Azure: May not show GPU options for some users
 
 4. **Temporary capacity issues**
    - Cloud provider might be out of GPU capacity
@@ -294,8 +327,8 @@ If Hugging Face doesn't show GPU options or keeps failing, use a provider that *
 Before clicking "Create Endpoint", verify:
 
 - [ ] Model is: `stabilityai/stable-diffusion-xl-base-1.0`
-- [ ] Cloud Provider is: **Azure** (or AWS us-east-1)
-- [ ] Instance Type shows: **"GPU"** in the name
+- [ ] Cloud Provider is: **AWS** or **Google Cloud** (Azure may not show GPU options)
+- [ ] Instance Type shows: **"GPU"** in the name (or ml.g5.xlarge for AWS)
 - [ ] Description mentions: "NVIDIA" and "VRAM"
 - [ ] Price is: $0.60-$1.30/hour (not $0.10-$0.40)
 - [ ] Min replicas set to: **0**
@@ -331,9 +364,9 @@ With **CPU instance** (wrong):
 **The Fix:**
 1. Delete current endpoint
 2. Create new endpoint
-3. Select **"GPU [medium]"** or instance with **"NVIDIA"** in description
+3. Select **"GPU [medium]"** or **ml.g5.xlarge** (AWS)
 4. **Do NOT select "CPU"** instances
-5. Use **Azure** for best GPU availability
+5. Use **AWS** or **Google Cloud** (Azure may not show GPU options)
 6. Should work in 5-10 minutes
 
 **Alternative:**

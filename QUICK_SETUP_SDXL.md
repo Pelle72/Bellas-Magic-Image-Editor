@@ -45,16 +45,20 @@ This happens because the Hugging Face public API has limitations. You need a **d
    **Basic Settings:**
    - **Name:** `bella-sdxl` (or any name you prefer)
    - **Model Repository:** `stabilityai/stable-diffusion-xl-base-1.0`
-   - **Cloud Provider:** **Azure** ← ⭐ **Recommended! AWS/GCP may fail**
-   - **Region:** West Europe or East US 2 (best GPU availability)
+   - **Cloud Provider:** **AWS** or **Google Cloud** ← ⭐ **Recommended! (Azure may not show GPU options)**
+   - **Region:** 
+     - AWS: us-east-1 or us-west-2
+     - Google Cloud: us-central1 or us-west1
 
    **Compute Settings:**
    - **Instance Type:** 
      - **GPU [medium]** - ⭐ **Recommended** (A10 or T4, works reliably)
+     - **ml.g5.xlarge** (AWS) - A10G GPU, excellent for SDXL
      - **GPU [small]** - May not have enough VRAM for SDXL
      - **GPU [large]** - A100, expensive but guaranteed to work
    
-   ⚠️ **Common Mistake:** Selecting CPU instance or incompatible GPU type
+   ⚠️ **Common Mistake:** Selecting CPU instance - must select GPU instance!
+   ⚠️ **Important:** GPU instances include CPUs automatically - you only select the GPU instance type
    
    **Advanced Settings:**
    - **Auto-scaling:**
@@ -181,9 +185,9 @@ await testHFConnection()
 ### Endpoint Status Issues
 
 **Status: "Hardware not compatible with selected model"**
-- **AWS/GCP compatibility issue** - Try Azure instead
-- Delete endpoint and recreate with Azure cloud provider
-- Or use ml.g5.xlarge instance type if staying on AWS
+- **CPU instance selected instead of GPU** - Select GPU instance
+- Delete endpoint and recreate with GPU [medium] or ml.g5.xlarge
+- Try AWS (us-east-1) or Google Cloud (us-central1) if current provider doesn't show GPU options
 - **Full guide:** [ENDPOINT_HARDWARE_FIX.md](./ENDPOINT_HARDWARE_FIX.md)
 
 **Status: Building/Starting**

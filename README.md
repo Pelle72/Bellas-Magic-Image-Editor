@@ -40,8 +40,9 @@ This app uses an **intelligent hybrid strategy** that leverages the unique stren
 - **Cost:** $0.60-$1.30/hour, scales to $0 when idle (~$6-$65/month with auto-scaling)
 
 **⚠️ Getting "Hardware not compatible" errors on Hugging Face?**
-- AWS and Google Cloud endpoints often have GPU compatibility issues with SDXL
-- **Solution:** Use **Azure cloud provider** when creating endpoint (not AWS/GCP)
+- Make sure to select **GPU instance** (like ml.g5.xlarge or GPU [medium]), not CPU instance
+- AWS and Google Cloud have compatible GPUs - select GPU instance type
+- Azure may not show GPU options for all users
 - See [ENDPOINT_HARDWARE_FIX.md](./ENDPOINT_HARDWARE_FIX.md) for detailed troubleshooting
 
 **Want higher quality and NSFW support?** 
@@ -97,18 +98,20 @@ This app uses an **intelligent hybrid strategy** that leverages the unique stren
 ⚠️ **Important:** You need to set up a **Dedicated Inference Endpoint** for reliable operation.
 
 **⚠️ Common Issue: "Hardware not compatible with selected model"**
-- This happens when using AWS or Google Cloud providers with SDXL
-- **Solution:** Use **Azure cloud provider** instead
+- This happens when selecting a CPU instance instead of a GPU instance
+- **Solution:** Select a **GPU instance** (ml.g5.xlarge for AWS, or GPU [medium])
+- GPU instances include CPUs automatically - you only select one instance type
 - Full troubleshooting: [ENDPOINT_HARDWARE_FIX.md](./ENDPOINT_HARDWARE_FIX.md)
 
 **Quick Setup (10 minutes):**
 1. Visit [Hugging Face Inference Endpoints](https://huggingface.co/inference-endpoints)
 2. Create endpoint with `stabilityai/stable-diffusion-xl-base-1.0`
-3. **Cloud Provider:** Azure (not AWS/GCP) ← **Important!**
-4. **Instance:** GPU [medium] (A10 or T4)
-5. Set min_replicas=0 for auto-scaling (saves money)
-6. Get endpoint URL and API token
-7. Enter both in app Settings (⚙️ icon)
+3. **Cloud Provider:** AWS or Google Cloud (Azure may not show GPU options)
+4. **Region:** us-east-1 (AWS) or us-central1 (Google Cloud)
+5. **Instance:** **GPU [medium]** or **ml.g5.xlarge** (A10 GPU) ← **Must be GPU instance!**
+6. Set min_replicas=0 for auto-scaling (saves money)
+7. Get endpoint URL and API token
+8. Enter both in app Settings (⚙️ icon)
 
 📖 **Step-by-step guide:** [QUICK_SETUP_SDXL.md](./QUICK_SETUP_SDXL.md)
 
