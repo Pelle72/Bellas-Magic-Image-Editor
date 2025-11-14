@@ -298,17 +298,15 @@ export const inpaintImage = async (
     
     console.log('[inpaintImage] API URL:', customEndpoint ? 'Custom Endpoint' : apiUrl);
 
-    // Convert base64 images to Blobs for multipart/form-data
-    const imageBlob = base64ToBlob(processedImageData, processedMimeType);
-    const maskBlob = base64ToBlob(processedMaskData, 'image/png');
-
-    // Create FormData payload with binary images
-    // The Hugging Face Inference API expects multipart/form-data format for inpainting
-    // Field names: 'image' for original image, 'mask' for mask, 'prompt' for text prompt
-    const formData = new FormData();
-    formData.append('image', imageBlob, 'image.png');
-    formData.append('mask', maskBlob, 'mask.png');
-    formData.append('prompt', prompt);
+    // The Hugging Face Inference API expects JSON with base64-encoded images
+    // Format: { inputs: { image: "base64", mask: "base64", prompt: "text" } }
+    const payload = {
+      inputs: {
+        image: processedImageData,
+        mask: processedMaskData,
+        prompt: prompt
+      }
+    };
 
     console.log('[inpaintImage] Sending request to Hugging Face API...');
     console.log('[inpaintImage] API URL:', apiUrl);
@@ -319,9 +317,9 @@ export const inpaintImage = async (
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
-        // Note: Do NOT set Content-Type header - let the browser set it with the boundary
+        'Content-Type': 'application/json',
       },
-      body: formData,
+      body: JSON.stringify(payload),
       mode: 'cors', // Explicitly set CORS mode
       credentials: 'omit' // Don't send cookies
     });
