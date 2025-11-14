@@ -341,15 +341,17 @@ export const inpaintImage = async (
 
     // The Hugging Face Inference API for inpainting expects JSON with base64-encoded images
     // NOT multipart/form-data which is not supported by the Inference API
+    // Format: prompt as inputs, image and mask as parameters
     const payload = {
-      inputs: {
+      inputs: prompt,
+      parameters: {
         image: processedImageData,
-        mask: processedMaskData,
-        prompt: prompt
+        mask_image: processedMaskData
       }
     };
 
     console.log('[inpaintImage] Sending request to Hugging Face API...');
+    console.log('[inpaintImage] Prompt:', prompt);
     console.log('[inpaintImage] Image data length:', processedImageData.length, 'chars');
     console.log('[inpaintImage] Mask data length:', processedMaskData.length, 'chars');
     
