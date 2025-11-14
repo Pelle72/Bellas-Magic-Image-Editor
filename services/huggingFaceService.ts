@@ -282,12 +282,6 @@ export const inpaintImage = async (
       console.log(`[inpaintImage] Downscaled to ${width}x${height}`);
     }
 
-    // Convert base64 images to Blobs
-    const imageBlob = base64ToBlob(processedImageData, processedMimeType);
-    const maskBlob = base64ToBlob(processedMaskData, 'image/png');
-    console.log('[inpaintImage] Image blob size:', imageBlob.size, 'bytes');
-    console.log('[inpaintImage] Mask blob size:', maskBlob.size, 'bytes');
-
     // Use Stable Diffusion Inpainting model
     // When using custom endpoint, use SDXL for better quality
     // Default to SD 1.5 inpainting for public API (most reliable)
@@ -304,16 +298,17 @@ export const inpaintImage = async (
     
     console.log('[inpaintImage] API URL:', customEndpoint ? 'Custom Endpoint' : apiUrl);
 
-    // Create FormData for multipart upload
-    const formData = new FormData();
-    formData.append('inputs', prompt);
-    formData.append('image', imageBlob, 'image.png');
-    formData.append('mask_image', maskBlob, 'mask.png');
-    // Disable safety checker to allow NSFW content
-    formData.append('parameters', JSON.stringify({
-      safety_checker: null,
-      requires_safety_checker: false
-    }));
+    // Create JSON payload with base64-encoded images
+    // The Hugging Face Inference API expects JSON format, not multipart/form-data
+    const payload = {
+      inputs: prompt,
+      image: processedImageData,
+      mask_image: processedMaskData,
+      parameters: {
+        safety_checker: null,
+        requires_safety_checker: false
+      }
+    };
 
     console.log('[inpaintImage] Sending request to Hugging Face API...');
     console.log('[inpaintImage] API URL:', apiUrl);
@@ -324,8 +319,9 @@ export const inpaintImage = async (
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
       },
-      body: formData,
+      body: JSON.stringify(payload),
       mode: 'cors', // Explicitly set CORS mode
       credentials: 'omit' // Don't send cookies
     });
