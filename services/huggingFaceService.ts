@@ -282,33 +282,26 @@ export const inpaintImage = async (
       console.log(`[inpaintImage] Downscaled to ${width}x${height}`);
     }
 
-    // Use Stable Diffusion Inpainting model via public API
-    // NOTE: Custom endpoints are typically deployed with text-to-image models (e.g., SDXL base)
-    // which don't support inpainting operations. Therefore, we always use the public API's
-    // dedicated inpainting model for reliable inpainting, regardless of custom endpoint settings.
-    // Custom endpoints are used only for text-to-image generation (generateImageFromText).
-    const model = 'runwayml/stable-diffusion-inpainting';  // SD 1.5 inpainting - most reliable
-    const apiUrl = `https://api-inference.huggingface.co/models/${model}`;
+    // Use custom endpoint if configured, otherwise use public API
+    // Both use FormData format for inpainting models
+    // For NSFW inpainting on custom endpoint, deploy: diffusers/stable-diffusion-xl-1.0-inpainting-0.1
+    const customEndpoint = getHFCustomEndpoint();
+    const apiUrl = customEndpoint || `https://api-inference.huggingface.co/models/runwayml/stable-diffusion-inpainting`;
     
-    console.log('[inpaintImage] Model:', model);
-    console.log('[inpaintImage] API URL:', apiUrl);
-    console.log('[inpaintImage] Note: Using public API for inpainting (custom endpoints typically only support text-to-image)');
+    console.log('[inpaintImage] Using custom endpoint:', !!customEndpoint);
+    console.log('[inpaintImage] API URL:', customEndpoint ? 'Custom Endpoint' : apiUrl);
 
     // The Hugging Face Inference API for inpainting expects binary data as FormData
-    // Convert base64 images to Blobs and send as multipart/form-data
+    // This works for both public API and custom endpoints with inpainting models deployed
     const imageBlob = base64ToBlob(processedImageData, processedMimeType);
     const maskBlob = base64ToBlob(processedMaskData, 'image/png');
     
-    // Create FormData with the required fields
     const formData = new FormData();
     formData.append('image', imageBlob, 'image.png');
     formData.append('mask', maskBlob, 'mask.png');
     formData.append('prompt', prompt);
 
     console.log('[inpaintImage] Sending request to Hugging Face API...');
-    console.log('[inpaintImage] API URL:', apiUrl);
-    console.log('[inpaintImage] API Key present:', !!apiKey);
-    console.log('[inpaintImage] API Key prefix:', apiKey ? apiKey.substring(0, 10) + '...' : 'none');
     console.log('[inpaintImage] Image blob size:', imageBlob.size, 'bytes');
     console.log('[inpaintImage] Mask blob size:', maskBlob.size, 'bytes');
     
@@ -319,8 +312,8 @@ export const inpaintImage = async (
         // Don't set Content-Type - let the browser set it with boundary for multipart/form-data
       },
       body: formData,
-      mode: 'cors', // Explicitly set CORS mode
-      credentials: 'omit' // Don't send cookies
+      mode: 'cors',
+      credentials: 'omit'
     });
 
     console.log('[inpaintImage] Response status:', response.status);
