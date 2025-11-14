@@ -10,6 +10,11 @@ let userApiKey: string | null = null;
 // Format: https://your-endpoint.endpoints.huggingface.cloud
 let customEndpoint: string | null = null;
 
+// Custom inpainting endpoint management (optional)
+// If set, this will be used for inpainting operations instead of the general custom endpoint
+// Format: https://your-inpainting-endpoint.endpoints.huggingface.cloud
+let customInpaintingEndpoint: string | null = null;
+
 // Initialize from localStorage if available (browser environment)
 if (typeof window !== 'undefined') {
   const storedKey = localStorage.getItem('hf_api_key');
@@ -19,6 +24,10 @@ if (typeof window !== 'undefined') {
   const storedEndpoint = localStorage.getItem('hf_custom_endpoint');
   if (storedEndpoint) {
     customEndpoint = storedEndpoint;
+  }
+  const storedInpaintingEndpoint = localStorage.getItem('hf_custom_inpainting_endpoint');
+  if (storedInpaintingEndpoint) {
+    customInpaintingEndpoint = storedInpaintingEndpoint;
   }
 }
 
@@ -72,6 +81,42 @@ export const clearHFCustomEndpoint = () => {
   customEndpoint = null;
   if (typeof window !== 'undefined') {
     localStorage.removeItem('hf_custom_endpoint');
+  }
+};
+
+/**
+ * Set a custom Hugging Face Inference Endpoint URL specifically for inpainting operations
+ * This allows using a dedicated inpainting endpoint separate from text-to-image
+ * @param endpoint - Full URL of your custom inpainting endpoint (e.g., 'https://xxxxx.endpoints.huggingface.cloud')
+ */
+export const setHFCustomInpaintingEndpoint = (endpoint: string) => {
+  customInpaintingEndpoint = endpoint;
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('hf_custom_inpainting_endpoint', endpoint);
+  }
+};
+
+/**
+ * Get the custom Hugging Face Inference Endpoint URL for inpainting if set
+ * @returns The custom inpainting endpoint URL or null if using public API
+ */
+export const getHFCustomInpaintingEndpoint = (): string | null => {
+  if (typeof window !== 'undefined') {
+    const storedEndpoint = localStorage.getItem('hf_custom_inpainting_endpoint');
+    if (storedEndpoint) {
+      return storedEndpoint.trim();
+    }
+  }
+  return customInpaintingEndpoint;
+};
+
+/**
+ * Clear the custom inpainting endpoint and revert to using general custom endpoint or public API
+ */
+export const clearHFCustomInpaintingEndpoint = () => {
+  customInpaintingEndpoint = null;
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('hf_custom_inpainting_endpoint');
   }
 };
 
@@ -282,14 +327,17 @@ export const inpaintImage = async (
       console.log(`[inpaintImage] Downscaled to ${width}x${height}`);
     }
 
-    // Use custom endpoint if configured, otherwise use public API
+    // Use custom inpainting endpoint if configured, otherwise use general custom endpoint, otherwise use public API
+    // Priority: Custom Inpainting Endpoint > General Custom Endpoint > Public API
     // Both use FormData format for inpainting models
     // For NSFW inpainting on custom endpoint, deploy: diffusers/stable-diffusion-xl-1.0-inpainting-0.1
+    const customInpaintingEndpoint = getHFCustomInpaintingEndpoint();
     const customEndpoint = getHFCustomEndpoint();
-    const apiUrl = customEndpoint || `https://api-inference.huggingface.co/models/runwayml/stable-diffusion-inpainting`;
+    const apiUrl = customInpaintingEndpoint || customEndpoint || `https://api-inference.huggingface.co/models/runwayml/stable-diffusion-inpainting`;
     
-    console.log('[inpaintImage] Using custom endpoint:', !!customEndpoint);
-    console.log('[inpaintImage] API URL:', customEndpoint ? 'Custom Endpoint' : apiUrl);
+    console.log('[inpaintImage] Using custom inpainting endpoint:', !!customInpaintingEndpoint);
+    console.log('[inpaintImage] Using general custom endpoint:', !customInpaintingEndpoint && !!customEndpoint);
+    console.log('[inpaintImage] API URL:', customInpaintingEndpoint || customEndpoint ? 'Custom Endpoint' : apiUrl);
 
     // The Hugging Face Inference API for inpainting expects binary data as FormData
     // This works for both public API and custom endpoints with inpainting models deployed
