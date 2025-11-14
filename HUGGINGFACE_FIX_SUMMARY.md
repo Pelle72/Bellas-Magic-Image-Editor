@@ -1,34 +1,18 @@
-# Hugging Face API Fix - Empty Image Issue
+# Hugging Face API Fix - Content Type Error
 
 ## Problem
-All AI tools and calls to Hugging Face API regarding image editing were returning blank empty files (0 bytes) with no image data.
+The Hugging Face Inference API was returning a 400 error rejecting requests with multipart/form-data:
+```
+Content type "multipart/form-data; boundary=..." not supported.
+Supported content types are: application/json, image/png, image/jpeg...
+```
 
 ## Root Cause
-The code was sending requests to the Hugging Face Inference API in the wrong format:
+The code was using FormData to send requests, which creates multipart/form-data format. However, the Hugging Face Inference API for inpainting expects JSON with base64-encoded image strings.
 
 ### Before (Incorrect)
 ```javascript
-// Sending JSON with base64-encoded images
-const payload = {
-  inputs: {
-    image: processedImageData,  // base64 string
-    mask: processedMaskData,    // base64 string
-    prompt: prompt
-  }
-};
-
-fetch(apiUrl, {
-  headers: {
-    'Authorization': `Bearer ${apiKey}`,
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify(payload)
-});
-```
-
-### After (Correct)
-```javascript
-// Sending binary data as FormData
+// Sending binary data as FormData (WRONG)
 const imageBlob = base64ToBlob(processedImageData, processedMimeType);
 const maskBlob = base64ToBlob(processedMaskData, 'image/png');
 
@@ -46,27 +30,45 @@ fetch(apiUrl, {
 });
 ```
 
+### After (Correct)
+```javascript
+// Sending JSON with base64-encoded images (CORRECT)
+const payload = {
+  inputs: prompt,
+  image: processedImageData,      // base64 string
+  mask_image: processedMaskData   // base64 string
+};
+
+fetch(apiUrl, {
+  headers: {
+    'Authorization': `Bearer ${apiKey}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(payload)
+});
+```
+
 ## Why This Matters
 The Hugging Face Inference API for image inpainting models (like `stable-diffusion-inpainting`) expects:
-- **Binary image data** sent as `multipart/form-data`
-- **Separate form fields** for image, mask, and prompt
-- **Proper MIME types** set by the browser
+- **JSON format** with `Content-Type: application/json`
+- **Base64-encoded image strings** for `image` and `mask_image` fields
+- **Prompt** in the `inputs` field
 
-When JSON with base64 strings is sent instead, the API either:
-1. Returns an error (which would be better)
-2. Returns an empty/blank image (0 bytes) - which is what was happening
+Using multipart/form-data results in a 400 error with the message "Content type not supported".
 
 ## Changes Made
 
 ### 1. Fixed `inpaintImage` Function
 **File**: `services/huggingFaceService.ts`
 
-- Converted base64 strings to Blob objects using existing `base64ToBlob` helper
-- Created FormData with proper binary attachments
-- Removed incorrect `Content-Type: application/json` header
-- Added validation to detect empty blob responses
+- Changed from FormData to JSON payload
+- Set `Content-Type: application/json` header
+- Use correct field names: `inputs`, `image`, `mask_image`
+- Send base64 strings directly (not Blob objects)
+- Removed unused `base64ToBlob` helper function
 
-### 2. Added Validation
+### 2. Validation
+The existing validation remains in place:
 ```javascript
 if (resultBlob.size === 0) {
   console.error('[inpaintImage] Received empty blob (0 bytes)');
@@ -74,11 +76,11 @@ if (resultBlob.size === 0) {
 }
 ```
 
-This catches the issue early and provides a clear error message.
+This catches empty responses and provides a clear error message.
 
 ### 3. Enhanced Logging
-Added detailed logging to help debug issues:
-- Input blob sizes before sending
+Updated logging to show base64 data lengths instead of blob sizes:
+- Input data lengths before sending
 - Response blob size and type
 - API URL and key presence
 
@@ -127,8 +129,8 @@ All image editing functions that use Hugging Face API are now fixed:
    - Go to Console tab
    - Look for logs like:
      ```
-     [inpaintImage] Image blob size: 245678 bytes
-     [inpaintImage] Mask blob size: 12345 bytes
+     [inpaintImage] Image data length: 245678 chars
+     [inpaintImage] Mask data length: 12345 chars
      [inpaintImage] Result blob size: 456789 bytes
      [inpaintImage] Result blob type: image/png
      ```
@@ -148,31 +150,41 @@ All image editing functions that use Hugging Face API are now fixed:
 
 ## Technical Notes
 
-### Why FormData?
+### Why JSON Format?
 The Hugging Face Inference API uses different input formats for different model types:
 
-| Model Type | Input Format | Example |
-|------------|--------------|---------|
+| Model Type | Input Format | Field Names |
+|------------|--------------|-------------|
 | Text-to-Image | JSON | `{ inputs: "a cat" }` |
-| Image-to-Image | Binary/FormData | `FormData with 'image' field` |
-| Inpainting | Binary/FormData | `FormData with 'image', 'mask', 'prompt'` |
+| Image-to-Image | JSON | `{ inputs: "prompt", image: "base64..." }` |
+| Inpainting | JSON | `{ inputs: "prompt", image: "base64...", mask_image: "base64..." }` |
 
-The previous code incorrectly used JSON format for inpainting models.
+**Important:** The API expects `application/json` with base64-encoded strings, NOT `multipart/form-data` with binary data.
+
+### Field Names
+- `inputs`: The prompt/description
+- `image`: Base64-encoded original image
+- `mask_image`: Base64-encoded mask (white = inpaint, black = preserve)
+
+Note: Use `mask_image` (with underscore), not just `mask`.
 
 ### Browser Compatibility
-FormData is supported in all modern browsers:
+JSON.stringify and fetch API are supported in all modern browsers:
 - Chrome/Edge: ✅
 - Firefox: ✅
 - Safari: ✅
 - Mobile browsers: ✅
 
 ### Content-Type Header
-When using FormData, the browser automatically sets:
-```
-Content-Type: multipart/form-data; boundary=----WebKitFormBoundary...
+Must be explicitly set to `application/json`:
+```javascript
+headers: {
+  'Authorization': `Bearer ${apiKey}`,
+  'Content-Type': 'application/json'
+}
 ```
 
-If you manually set `Content-Type`, the boundary won't be included and the request will fail.
+**Do NOT** use FormData as it automatically sets `Content-Type: multipart/form-data` which is not supported by the API.
 
 ## Related Documentation
 - [Hugging Face Inference API](https://huggingface.co/docs/api-inference/)
