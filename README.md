@@ -24,15 +24,36 @@ This app uses an **intelligent hybrid strategy** that leverages the unique stren
   **Currently configured with: `runwayml/stable-diffusion-inpainting`** - most reliable
 - **Inpainting** - Precise mask-based editing
 - **Outpainting/Expansion** - Seamless image extension beyond borders
-- **Cost**: $0.001-$0.02 per request (compute-time based)
-- **Resolution limits**: Auto-downscales to 1024px max dimension (preserves aspect ratio)
+- **Cost**: $0.60-$1.30/hour for dedicated endpoint (scales to $0 when idle)
+- **Resolution**: Supports up to 1024x1024 with SDXL on dedicated endpoints
+- **Cloud Infrastructure**: Runs on NVIDIA GPUs (T4, A10, A100) with full SDXL support
 
-**Note**: The app uses the most reliable Stable Diffusion models by default. 
+⚠️ **Important:** The app requires a **Hugging Face Dedicated Inference Endpoint** to work reliably. The free public API often fails with "Failed to fetch" errors due to CORS restrictions.
+
+📖 **Quick Setup:** See [QUICK_SETUP_SDXL.md](./QUICK_SETUP_SDXL.md) for step-by-step endpoint setup (10 minutes)
+
+**Note**: The app uses the most reliable Stable Diffusion models by default, but requires a dedicated endpoint for reliable operation.
+
+**⚠️ Getting "Failed to fetch" errors?**
+- The free Hugging Face public API has CORS and rate limit issues
+- **Solution:** Set up a [Dedicated Inference Endpoint](./QUICK_SETUP_SDXL.md) (10 min setup)
+- **Cost:** $0.60-$1.30/hour, scales to $0 when idle (~$6-$65/month with auto-scaling)
+
+**⚠️ Getting "Hardware not compatible" errors on Hugging Face?**
+- Make sure to select **GPU instance** (like ml.g5.xlarge or GPU [medium]), not CPU instance
+- AWS and Google Cloud have compatible GPUs - select GPU instance type
+- Azure may not show GPU options for all users
+- See [ENDPOINT_HARDWARE_FIX.md](./ENDPOINT_HARDWARE_FIX.md) for detailed troubleshooting
 
 **Want higher quality and NSFW support?** 
-- Set up a [Custom Inference Endpoint](./CUSTOM_ENDPOINT_SETUP.md) ($0.60-$1.30/hour)
+- Set up a [Custom Inference Endpoint](./CUSTOM_ENDPOINT_SETUP.md) with SDXL models
 - Enable SDXL (1024x1024) and NSFW XL models
 - Configure via Settings → Custom Inference Endpoint
+
+**Looking for cloud infrastructure options?**
+- See [CLOUD_INFERENCE_PROVIDERS.md](./CLOUD_INFERENCE_PROVIDERS.md) for compatible cloud providers
+- Hugging Face API already uses SDXL-compatible hardware (NVIDIA T4/A10/A100)
+- Alternative providers beyond AWS/GCP documented (immers.cloud, RunPod, Vast.ai, etc.)
 
 ### 🚀 Why This Combination?
 
@@ -72,11 +93,33 @@ This app uses an **intelligent hybrid strategy** that leverages the unique stren
 4. Create a new API key
 5. Copy and paste it into your `.env.local` file or app settings
 
-### Hugging Face API Key (Required for inpainting and expansion)
-1. Visit [Hugging Face Settings](https://huggingface.co/settings/tokens)
-2. Sign up or log in
-3. Create a new access token (read permission is sufficient)
-4. Copy and paste it into your `.env.local` file or app settings
+### Hugging Face Setup (Required for AI image generation)
+
+⚠️ **Important:** You need to set up a **Dedicated Inference Endpoint** for reliable operation.
+
+**⚠️ Common Issue: "Hardware not compatible with selected model"**
+- This happens when selecting a CPU instance instead of a GPU instance
+- **Solution:** Select a **GPU instance** (ml.g5.xlarge for AWS, or GPU [medium])
+- GPU instances include CPUs automatically - you only select one instance type
+- Full troubleshooting: [ENDPOINT_HARDWARE_FIX.md](./ENDPOINT_HARDWARE_FIX.md)
+
+**Quick Setup (10 minutes):**
+1. Visit [Hugging Face Inference Endpoints](https://huggingface.co/inference-endpoints)
+2. Create endpoint with `stabilityai/stable-diffusion-xl-base-1.0`
+3. **Cloud Provider:** AWS or Google Cloud (Azure may not show GPU options)
+4. **Region:** us-east-1 (AWS) or us-central1 (Google Cloud)
+5. **Instance:** **GPU [medium]** or **ml.g5.xlarge** (A10 GPU) ← **Must be GPU instance!**
+6. Set min_replicas=0 for auto-scaling (saves money)
+7. Get endpoint URL and API token
+8. Enter both in app Settings (⚙️ icon)
+
+📖 **Step-by-step guide:** [QUICK_SETUP_SDXL.md](./QUICK_SETUP_SDXL.md)
+
+**Why not use the free public API?**
+- ❌ Often fails with "Failed to fetch" errors (CORS restrictions)
+- ❌ Rate limited and unreliable
+- ✅ Dedicated endpoint bypasses these issues
+- ✅ Auto-scaling keeps costs low (~$6-$65/month)
 
 📖 **Detailed Setup Guide**: See [HUGGINGFACE_SETUP.md](HUGGINGFACE_SETUP.md) for:
 - Step-by-step API key generation
