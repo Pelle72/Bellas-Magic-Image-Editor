@@ -43,8 +43,13 @@ Three new guides:
 ### Your Endpoint Dashboard
 https://endpoints.huggingface.co/JohnDcc/endpoints/dedicated
 
-### Your Endpoint URL
-`https://um5pw9qp4dg1y5n7.us-east4.gcp.endpoints.huggingface.cloud`
+### Your Endpoint URL (Example - AWS)
+`https://xxxxx.us-east-1.aws.endpoints.huggingface.cloud`
+
+**Note**: This is an example format. Your actual URL will be different and depends on your cloud provider:
+- **AWS**: `https://xxxxx.us-east-1.aws.endpoints.huggingface.cloud`
+- **Azure**: `https://xxxxx.eastus.azure.endpoints.huggingface.cloud`
+- ⚠️ **Google Cloud Not Recommended**: Limited GPU options
 
 ### Model Configured
 `stabilityai/stable-diffusion-xl-base-1.0`
@@ -56,7 +61,7 @@ https://endpoints.huggingface.co/JohnDcc/endpoints/dedicated
 2. Click **⚙️ Settings**
 3. Fill in:
    - **Hugging Face API-nyckel**: `hf_xxxxx...` (from https://huggingface.co/settings/tokens)
-   - **Custom Inference Endpoint**: `https://um5pw9qp4dg1y5n7.us-east4.gcp.endpoints.huggingface.cloud`
+   - **Custom Inference Endpoint**: `https://xxxxx.us-east-1.aws.endpoints.huggingface.cloud` (your actual URL)
 4. Click **Spara** (Save)
 
 #### 2. Model is Automatically Configured

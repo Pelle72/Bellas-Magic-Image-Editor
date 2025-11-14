@@ -231,10 +231,10 @@ Error in inference endpoint config: Intel Sapphire Rapids
 1x vCPU · 2 GB
 $0.05 / h
 
-US East 4
-us-east4
- incompatible Hardware not compatible with selected model.
+Hardware not compatible with selected model.
 ```
+
+**Note**: This error can appear on any cloud provider when you select a CPU instance instead of GPU.
 
 **Cause**: You selected a **CPU instance** (Intel Sapphire Rapids, AMD EPYC, etc.) instead of a GPU instance when creating your Hugging Face Inference Endpoint.
 
@@ -252,6 +252,11 @@ us-east4
 
 2. **Create a new endpoint with GPU instance**:
    - Click "Create new endpoint"
+   - **Select Cloud Provider**: Choose **AWS** (recommended) or Azure
+     - ⚠️ Avoid Google Cloud - limited GPU availability
+   - **Select Region**: 
+     - AWS: us-east-1, us-west-2, or eu-west-1
+     - Azure: eastus, westus2, or northeurope
    - When selecting **Instance Type**, choose one of:
      - ✅ **T4 GPU** - $0.60/hour (minimum for Stable Diffusion)
      - ✅ **A10G GPU** - $1.30/hour (recommended for SDXL)

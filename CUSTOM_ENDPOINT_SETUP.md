@@ -168,8 +168,13 @@ Dedicated endpoints require payment:
 **Basic Settings:**
 - **Name**: Choose a descriptive name (e.g., "bella-nsfw-xl")
 - **Model Repository**: Select your model (see recommendations below)
-- **Cloud Provider**: AWS, Azure, or Google Cloud (AWS is most common)
+- **Cloud Provider**: **AWS (Recommended)** or Azure
+  - ⚠️ **Avoid Google Cloud**: Limited GPU availability and more restrictive instance options
+  - AWS has best GPU availability and pricing
+  - Azure is acceptable alternative
 - **Region**: Choose nearest to your users for lower latency
+  - **AWS**: us-east-1 (N. Virginia), us-west-2 (Oregon), eu-west-1 (Ireland)
+  - **Azure**: eastus, westus2, northeurope
 
 **Compute Settings:**
 
