@@ -283,12 +283,12 @@ export const inpaintImage = async (
     }
 
     // Use Stable Diffusion Inpainting model
-    // When using custom endpoint, use SDXL for better quality
+    // When using custom endpoint, use SDXL inpainting model for better quality
     // Default to SD 1.5 inpainting for public API (most reliable)
     const customEndpoint = getHFCustomEndpoint();
     const model = customEndpoint
-      ? 'stabilityai/stable-diffusion-xl-base-1.0'  // SDXL works for inpainting too
-      : 'runwayml/stable-diffusion-inpainting';      // SD 1.5 inpainting for public API
+      ? 'diffusers/stable-diffusion-xl-1.0-inpainting-0.1'  // SDXL inpainting for custom endpoints
+      : 'runwayml/stable-diffusion-inpainting';              // SD 1.5 inpainting for public API
     
     console.log('[inpaintImage] Model:', model);
     
