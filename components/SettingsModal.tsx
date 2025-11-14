@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { KeyIcon } from './Icons';
 import { getApiKey, setApiKey } from '../services/grokService';
-import { getHFApiKey, setHFApiKey, getHFCustomEndpoint, setHFCustomEndpoint, clearHFCustomEndpoint } from '../services/huggingFaceService';
+import { 
+  getHFApiKey, 
+  setHFApiKey, 
+  getHFCustomEndpoint, 
+  setHFCustomEndpoint, 
+  clearHFCustomEndpoint,
+  getHFCustomInpaintingEndpoint,
+  setHFCustomInpaintingEndpoint,
+  clearHFCustomInpaintingEndpoint
+} from '../services/huggingFaceService';
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -11,6 +20,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
   const [apiKey, setApiKeyLocal] = useState('');
   const [hfApiKey, setHFApiKeyLocal] = useState('');
   const [hfCustomEndpoint, setHFCustomEndpointLocal] = useState('');
+  const [hfCustomInpaintingEndpoint, setHFCustomInpaintingEndpointLocal] = useState('');
   const [showKey, setShowKey] = useState(false);
   const [showHFKey, setShowHFKey] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -30,10 +40,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     const storedEndpoint = localStorage.getItem('hf_custom_endpoint');
     const currentEndpoint = storedEndpoint || getHFCustomEndpoint() || '';
     setHFCustomEndpointLocal(currentEndpoint);
+    
+    const storedInpaintingEndpoint = localStorage.getItem('hf_custom_inpainting_endpoint');
+    const currentInpaintingEndpoint = storedInpaintingEndpoint || getHFCustomInpaintingEndpoint() || '';
+    setHFCustomInpaintingEndpointLocal(currentInpaintingEndpoint);
   }, []);
 
   const handleSave = () => {
-    if (apiKey.trim() || hfApiKey.trim() || hfCustomEndpoint.trim()) {
+    if (apiKey.trim() || hfApiKey.trim() || hfCustomEndpoint.trim() || hfCustomInpaintingEndpoint.trim()) {
       // Save xAI API key
       if (apiKey.trim()) {
         localStorage.setItem('xai_api_key', apiKey.trim());
@@ -50,6 +64,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
       } else {
         clearHFCustomEndpoint();
       }
+      // Save or clear Hugging Face custom inpainting endpoint
+      if (hfCustomInpaintingEndpoint.trim()) {
+        setHFCustomInpaintingEndpoint(hfCustomInpaintingEndpoint.trim());
+      } else {
+        clearHFCustomInpaintingEndpoint();
+      }
       setSaved(true);
       setTimeout(() => {
         setSaved(false);
@@ -62,9 +82,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     localStorage.removeItem('xai_api_key');
     localStorage.removeItem('hf_api_key');
     clearHFCustomEndpoint();
+    clearHFCustomInpaintingEndpoint();
     setApiKeyLocal('');
     setHFApiKeyLocal('');
     setHFCustomEndpointLocal('');
+    setHFCustomInpaintingEndpointLocal('');
     setApiKey('');
     setHFApiKey('');
   };
@@ -153,7 +175,23 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
             className="w-full p-3 bg-gray-900 rounded-md focus:ring-2 focus:ring-purple-500 focus:outline-none"
           />
           <p className="text-xs text-gray-400 mt-2">
-            För högre upplösning och NSFW-modeller. Lämna tom för gratis publik API.
+            För text-till-bild generering. Lämna tom för gratis publik API.
+          </p>
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Custom Inpainting Endpoint (valfritt)
+          </label>
+          <input
+            type="text"
+            value={hfCustomInpaintingEndpoint}
+            onChange={(e) => setHFCustomInpaintingEndpointLocal(e.target.value)}
+            placeholder="https://xxxxx.endpoints.huggingface.cloud"
+            className="w-full p-3 bg-gray-900 rounded-md focus:ring-2 focus:ring-purple-500 focus:outline-none"
+          />
+          <p className="text-xs text-gray-400 mt-2">
+            För inpainting/outpainting och NSFW-redigering. Rekommenderad modell: diffusers/stable-diffusion-xl-1.0-inpainting-0.1
             <br />
             <a
               href="https://huggingface.co/inference-endpoints"
@@ -186,7 +224,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
           </p>
           {hfCustomEndpoint && (
             <p className="text-xs text-purple-400 mt-2">
-              ⚡ Custom endpoint aktiverad - högre kvalitet och NSFW-stöd tillgängligt
+              ⚡ Text-till-bild endpoint aktiverad - högre kvalitet tillgängligt
+            </p>
+          )}
+          {hfCustomInpaintingEndpoint && (
+            <p className="text-xs text-purple-400 mt-2">
+              🎨 Inpainting endpoint aktiverad - NSFW-redigering och högre upplösning tillgängligt
             </p>
           )}
         </div>
@@ -194,7 +237,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
         <div className="flex gap-3">
           <button
             onClick={handleSave}
-            disabled={!apiKey.trim() && !hfApiKey.trim() && !hfCustomEndpoint.trim()}
+            disabled={!apiKey.trim() && !hfApiKey.trim() && !hfCustomEndpoint.trim() && !hfCustomInpaintingEndpoint.trim()}
             className="flex-1 px-4 py-3 bg-blue-600 rounded-md hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-colors"
           >
             {saved ? '✓ Sparad!' : 'Spara'}
