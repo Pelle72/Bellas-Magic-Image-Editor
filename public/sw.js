@@ -1,9 +1,19 @@
 
-const CACHE_NAME = 'bella-magic-editor-v4';
+const CACHE_NAME = 'bella-magic-editor-v5';
+
+// Get the base path from the service worker's location
+// This works for both root deployments and subdirectory deployments (like GitHub Pages)
+const getBasePath = () => {
+  const swPath = self.location.pathname;
+  return swPath.substring(0, swPath.lastIndexOf('/') + 1);
+};
+
+const basePath = getBasePath();
+
 const urlsToCache = [
-  './',
-  './index.html',
-  './manifest.json',
+  basePath,
+  `${basePath}index.html`,
+  `${basePath}manifest.json`,
   'https://cdn.tailwindcss.com',
   'https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap'
 ];
