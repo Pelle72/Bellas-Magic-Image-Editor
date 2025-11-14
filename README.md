@@ -39,6 +39,11 @@ This app uses an **intelligent hybrid strategy** that leverages the unique stren
 - **Solution:** Set up a [Dedicated Inference Endpoint](./QUICK_SETUP_SDXL.md) (10 min setup)
 - **Cost:** $0.60-$1.30/hour, scales to $0 when idle (~$6-$65/month with auto-scaling)
 
+**⚠️ Getting "Hardware not compatible" errors on Hugging Face?**
+- AWS and Google Cloud endpoints often have GPU compatibility issues with SDXL
+- **Solution:** Use **Azure cloud provider** when creating endpoint (not AWS/GCP)
+- See [ENDPOINT_HARDWARE_FIX.md](./ENDPOINT_HARDWARE_FIX.md) for detailed troubleshooting
+
 **Want higher quality and NSFW support?** 
 - Set up a [Custom Inference Endpoint](./CUSTOM_ENDPOINT_SETUP.md) with SDXL models
 - Enable SDXL (1024x1024) and NSFW XL models
@@ -91,13 +96,19 @@ This app uses an **intelligent hybrid strategy** that leverages the unique stren
 
 ⚠️ **Important:** You need to set up a **Dedicated Inference Endpoint** for reliable operation.
 
+**⚠️ Common Issue: "Hardware not compatible with selected model"**
+- This happens when using AWS or Google Cloud providers with SDXL
+- **Solution:** Use **Azure cloud provider** instead
+- Full troubleshooting: [ENDPOINT_HARDWARE_FIX.md](./ENDPOINT_HARDWARE_FIX.md)
+
 **Quick Setup (10 minutes):**
 1. Visit [Hugging Face Inference Endpoints](https://huggingface.co/inference-endpoints)
 2. Create endpoint with `stabilityai/stable-diffusion-xl-base-1.0`
-3. Choose A10G GPU ($1.30/hour) or T4 ($0.60/hour)
-4. Set min_replicas=0 for auto-scaling (saves money)
-5. Get endpoint URL and API token
-6. Enter both in app Settings (⚙️ icon)
+3. **Cloud Provider:** Azure (not AWS/GCP) ← **Important!**
+4. **Instance:** GPU [medium] (A10 or T4)
+5. Set min_replicas=0 for auto-scaling (saves money)
+6. Get endpoint URL and API token
+7. Enter both in app Settings (⚙️ icon)
 
 📖 **Step-by-step guide:** [QUICK_SETUP_SDXL.md](./QUICK_SETUP_SDXL.md)
 

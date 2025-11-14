@@ -109,11 +109,18 @@ const model = 'stabilityai/stable-diffusion-xl-base-1.0';  // SDXL inpainting
 
 This is the **recommended approach** to avoid "Failed to fetch" errors:
 
+⚠️ **Important: Getting "Hardware not compatible" errors?**
+- AWS and GCP endpoints often fail with SDXL due to GPU compatibility
+- **Use Azure cloud provider instead** - most reliable for SDXL
+- See [ENDPOINT_HARDWARE_FIX.md](./ENDPOINT_HARDWARE_FIX.md) for detailed solutions
+
 1. **Create Endpoint** (5-10 minutes)
    - Visit [Hugging Face Inference Endpoints](https://huggingface.co/inference-endpoints)
    - Click "Create new endpoint"
    - Select model: `stabilityai/stable-diffusion-xl-base-1.0`
-   - Choose GPU: **A10G** ($1.30/hour) or **T4** ($0.60/hour)
+   - **Cloud Provider: Azure** ← ⭐ **Use this, not AWS/GCP**
+   - **Region:** West Europe or East US 2
+   - Choose GPU: **GPU [medium]** (A10 or T4)
    - Set min replicas: **0** (scales to zero when idle)
    - Click "Create Endpoint"
 

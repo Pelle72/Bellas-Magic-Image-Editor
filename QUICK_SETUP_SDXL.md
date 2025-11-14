@@ -29,6 +29,13 @@ This happens because the Hugging Face public API has limitations. You need a **d
 
 ### 3. Create Inference Endpoint
 
+⚠️ **Critical: Cloud Provider Selection Matters!**
+
+**If you're getting "Hardware not compatible with selected model" errors:**
+- AWS and Google Cloud often have GPU compatibility issues with SDXL
+- **Use Azure instead** - most reliable for SDXL endpoints
+- See [ENDPOINT_HARDWARE_FIX.md](./ENDPOINT_HARDWARE_FIX.md) for detailed troubleshooting
+
 1. **Navigate to Endpoints:**
    - Go to [Inference Endpoints](https://huggingface.co/inference-endpoints)
    - Click **"Create new endpoint"**
@@ -38,13 +45,16 @@ This happens because the Hugging Face public API has limitations. You need a **d
    **Basic Settings:**
    - **Name:** `bella-sdxl` (or any name you prefer)
    - **Model Repository:** `stabilityai/stable-diffusion-xl-base-1.0`
-   - **Cloud Provider:** AWS (default is fine)
-   - **Region:** Choose closest to your location
+   - **Cloud Provider:** **Azure** ← ⭐ **Recommended! AWS/GCP may fail**
+   - **Region:** West Europe or East US 2 (best GPU availability)
 
    **Compute Settings:**
    - **Instance Type:** 
-     - **T4 (Small)** - $0.60/hour - Good for testing
-     - **A10G (Medium)** - $1.30/hour - ⭐ **Recommended for SDXL**
+     - **GPU [medium]** - ⭐ **Recommended** (A10 or T4, works reliably)
+     - **GPU [small]** - May not have enough VRAM for SDXL
+     - **GPU [large]** - A100, expensive but guaranteed to work
+   
+   ⚠️ **Common Mistake:** Selecting CPU instance or incompatible GPU type
    
    **Advanced Settings:**
    - **Auto-scaling:**
@@ -55,7 +65,11 @@ This happens because the Hugging Face public API has limitations. You need a **d
 3. **Create Endpoint:**
    - Click **"Create Endpoint"**
    - Wait 5-10 minutes for deployment
-   - Status will change to "Running" when ready
+   - Status will change from "Building" → "Running" when ready
+   
+   **If deployment fails with "Hardware not compatible":**
+   - See [ENDPOINT_HARDWARE_FIX.md](./ENDPOINT_HARDWARE_FIX.md) for solutions
+   - Quick fix: Delete endpoint and recreate with Azure cloud provider
 
 ### 4. Get Your Credentials
 
@@ -166,6 +180,12 @@ await testHFConnection()
 
 ### Endpoint Status Issues
 
+**Status: "Hardware not compatible with selected model"**
+- **AWS/GCP compatibility issue** - Try Azure instead
+- Delete endpoint and recreate with Azure cloud provider
+- Or use ml.g5.xlarge instance type if staying on AWS
+- **Full guide:** [ENDPOINT_HARDWARE_FIX.md](./ENDPOINT_HARDWARE_FIX.md)
+
 **Status: Building/Starting**
 - Wait a few more minutes
 - First deployment can take 5-10 minutes
@@ -173,7 +193,7 @@ await testHFConnection()
 **Status: Stopped/Failed**
 - Click "Resume" button
 - Check logs for errors
-- May need to recreate endpoint
+- May need to recreate endpoint with different cloud provider
 
 **Status: Scaled to Zero**
 - Normal with auto-scaling
