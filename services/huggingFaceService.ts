@@ -120,17 +120,6 @@ export const clearHFCustomInpaintingEndpoint = () => {
   }
 };
 
-// Helper to convert base64 to Blob
-const base64ToBlob = (base64: string, mimeType: string): Blob => {
-  const byteCharacters = atob(base64);
-  const byteNumbers = new Array(byteCharacters.length);
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteNumbers[i] = byteCharacters.charCodeAt(i);
-  }
-  const byteArray = new Uint8Array(byteNumbers);
-  return new Blob([byteArray], { type: mimeType });
-};
-
 /**
  * Test Hugging Face API connectivity and authentication
  * This function can be called from the browser console for debugging
@@ -329,7 +318,7 @@ export const inpaintImage = async (
 
     // Use custom inpainting endpoint if configured, otherwise use general custom endpoint, otherwise use public API
     // Priority: Custom Inpainting Endpoint > General Custom Endpoint > Public API
-    // Both use FormData format with binary blobs for inpainting models
+    // Both use JSON format with base64-encoded images for inpainting models
     // For NSFW inpainting on custom endpoint, deploy: diffusers/stable-diffusion-xl-1.0-inpainting-0.1
     const customInpaintingEndpoint = getHFCustomInpaintingEndpoint();
     const customEndpoint = getHFCustomEndpoint();
@@ -339,28 +328,26 @@ export const inpaintImage = async (
     console.log('[inpaintImage] Using general custom endpoint:', !customInpaintingEndpoint && !!customEndpoint);
     console.log('[inpaintImage] API URL:', customInpaintingEndpoint || customEndpoint ? 'Custom Endpoint' : apiUrl);
 
-    // The Hugging Face Inference API for inpainting expects FormData with binary blobs
-    // Convert base64 to Blob objects for proper multipart/form-data format
-    const imageBlob = base64ToBlob(processedImageData, processedMimeType);
-    const maskBlob = base64ToBlob(processedMaskData, 'image/png');
-
-    const formData = new FormData();
-    formData.append('image', imageBlob, 'image.png');
-    formData.append('mask', maskBlob, 'mask.png');
-    formData.append('prompt', prompt);
+    // The Hugging Face Inference API for inpainting expects JSON with base64-encoded images
+    // Create the payload with the correct field names
+    const payload = {
+      inputs: prompt,
+      image: processedImageData,
+      mask_image: processedMaskData
+    };
 
     console.log('[inpaintImage] Sending request to Hugging Face API...');
     console.log('[inpaintImage] Prompt:', prompt);
-    console.log('[inpaintImage] Image blob size:', imageBlob.size, 'bytes');
-    console.log('[inpaintImage] Mask blob size:', maskBlob.size, 'bytes');
+    console.log('[inpaintImage] Image data length:', processedImageData.length, 'chars');
+    console.log('[inpaintImage] Mask data length:', processedMaskData.length, 'chars');
     
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
-        // Don't set Content-Type - browser will set it automatically with multipart boundary
+        'Content-Type': 'application/json',
       },
-      body: formData,
+      body: JSON.stringify(payload),
       mode: 'cors',
       credentials: 'omit'
     });
