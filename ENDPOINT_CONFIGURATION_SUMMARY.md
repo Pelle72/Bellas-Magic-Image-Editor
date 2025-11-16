@@ -43,11 +43,22 @@ Three new guides:
 ### Your Endpoint Dashboard
 https://endpoints.huggingface.co/JohnDcc/endpoints/dedicated
 
-### Your Endpoint URL
-`https://um5pw9qp4dg1y5n7.us-east4.gcp.endpoints.huggingface.cloud`
+### Your Endpoint URL (Example - AWS)
+`https://xxxxx.us-east-1.aws.endpoints.huggingface.cloud`
 
-### Model Configured
-`stabilityai/stable-diffusion-xl-base-1.0`
+**Note**: This is an example format. Your actual URL will be different and depends on your cloud provider:
+- **AWS**: `https://xxxxx.us-east-1.aws.endpoints.huggingface.cloud`
+- **Azure**: `https://xxxxx.eastus.azure.endpoints.huggingface.cloud`
+- ⚠️ **Google Cloud Not Recommended**: Limited GPU options
+
+### Model Configured on Your Endpoint
+Your endpoint may have one of these SDXL model variants:
+- `stabilityai/stable-diffusion-xl-base-1.0` (standard SDXL)
+- `stable-diffusion-xl-base-1-0-clr` (SDXL variant)
+- `stabilityai/sdxl-turbo` (faster variant)
+- Other SDXL-based models
+
+**Important**: When using a custom endpoint, the model is already deployed on the endpoint. The app sends requests to your endpoint URL, which automatically uses whatever model you deployed. You don't need to change the model name in the code unless you encounter issues.
 
 ### Step-by-Step
 
@@ -56,11 +67,11 @@ https://endpoints.huggingface.co/JohnDcc/endpoints/dedicated
 2. Click **⚙️ Settings**
 3. Fill in:
    - **Hugging Face API-nyckel**: `hf_xxxxx...` (from https://huggingface.co/settings/tokens)
-   - **Custom Inference Endpoint**: `https://um5pw9qp4dg1y5n7.us-east4.gcp.endpoints.huggingface.cloud`
+   - **Custom Inference Endpoint**: `https://xxxxx.us-east-1.aws.endpoints.huggingface.cloud` (your actual URL)
 4. Click **Spara** (Save)
 
-#### 2. Model is Automatically Configured
-The code now automatically uses `stabilityai/stable-diffusion-xl-base-1.0` when your custom endpoint is detected. No manual code changes needed!
+#### 2. Model is Automatically Handled
+When you configure a custom endpoint, the app automatically routes requests to your endpoint URL. The endpoint uses whatever model you deployed (e.g., `stable-diffusion-xl-base-1-0-clr`, `stabilityai/stable-diffusion-xl-base-1.0`, etc.). No code changes are needed!
 
 #### 3. First Use - Model Loading
 - **First image generation**: 30-60 seconds (model loading from cold start)
@@ -103,11 +114,18 @@ With your endpoint configured:
 ✅ **Faster Generation**: After initial load  
 
 ### Cost
+⚠️ **GPU Required**: Stable Diffusion models require GPU acceleration. CPU instances ($0.05/hour) are NOT compatible.
+
+**Compatible GPU Instance Costs:**
 - **$0.60/hour** (T4 GPU - good for SD 1.5, basic SDXL)
-- **$1.30/hour** (A10G GPU - best for SDXL, NSFW XL)
+- **$1.30/hour** (A10G GPU - best for SDXL, NSFW XL, recommended)
 - Auto-scales to zero when not in use (saves money)
 - First request: 30-60 seconds (model loading)
 - Subsequent: Much faster
+
+**❌ Incompatible (DO NOT USE):**
+- **$0.05/hour** (Intel Sapphire Rapids CPU) - Will fail with "Hardware not compatible" error
+- Any CPU-only instance - Image generation requires GPU
 
 ---
 
@@ -125,6 +143,7 @@ https://endpoints.huggingface.co/JohnDcc/endpoints/dedicated
 
 **Troubleshooting:**
 - Can't find URL? → See `ENDPOINT_QUICK_START.md`
+- "Hardware not compatible" error? → You selected a CPU instance - use T4, A10G, or A100 GPU instead
 - Not working? → Check endpoint status is "Running"
 - Wrong model? → Check "Model Repository" on dashboard
 

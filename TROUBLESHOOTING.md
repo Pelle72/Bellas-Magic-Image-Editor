@@ -229,10 +229,68 @@ If none of the above solutions work:
    - Edit `/services/hybridService.ts` to use Grok for image generation instead of Hugging Face
    - Note: This will be more expensive but avoids CORS issues
 
+## Custom Inference Endpoint Issues
+
+### "Hardware not compatible with selected model" Error
+
+**Full Error Message:**
+```
+Error in inference endpoint config: Intel Sapphire Rapids
+1x vCPU · 2 GB
+$0.05 / h
+
+Hardware not compatible with selected model.
+```
+
+**Note**: This error can appear on any cloud provider when you select a CPU instance instead of GPU.
+
+**Cause**: You selected a **CPU instance** (Intel Sapphire Rapids, AMD EPYC, etc.) instead of a GPU instance when creating your Hugging Face Inference Endpoint.
+
+**Why This Happens**: 
+- Stable Diffusion models require **GPU acceleration** for neural network computation
+- CPUs only have a few cores and cannot run these models
+- GPUs have thousands of cores optimized for parallel processing
+- This is a fundamental requirement, not a configuration issue
+
+**Solution**:
+1. **Delete the incompatible endpoint**:
+   - Go to your [Hugging Face Endpoints Dashboard](https://huggingface.co/inference-endpoints)
+   - Find the endpoint with CPU instance
+   - Click "Delete" or "Terminate"
+
+2. **Create a new endpoint with GPU instance**:
+   - Click "Create new endpoint"
+   - **Select Cloud Provider**: Choose **AWS** (recommended) or Azure
+     - ⚠️ Avoid Google Cloud - limited GPU availability
+   - **Select Region**: 
+     - AWS: us-east-1, us-west-2, or eu-west-1
+     - Azure: eastus, westus2, or northeurope
+   - When selecting **Instance Type**, choose one of:
+     - ✅ **T4 GPU** - $0.60/hour (minimum for Stable Diffusion)
+     - ✅ **A10G GPU** - $1.30/hour (recommended for SDXL)
+     - ✅ **A100 GPU** - $4.50/hour (best quality, expensive)
+   - **DO NOT select**:
+     - ❌ Intel Sapphire Rapids ($0.05/hour)
+     - ❌ AMD EPYC
+     - ❌ Any CPU-only instance
+
+3. **Wait for deployment** (5-10 minutes)
+
+4. **Update app settings** with new endpoint URL
+
+**Cost Note**: Yes, GPU instances are more expensive ($0.60+/hour vs $0.05/hour), but this is unavoidable for running image generation models. Consider:
+- Setting **min replicas to 0** so the endpoint scales down when not in use
+- Using the free public Hugging Face API instead (limited to 512x512 resolution)
+
+**See Also**: 
+- [CUSTOM_ENDPOINT_SETUP.md](./CUSTOM_ENDPOINT_SETUP.md) - Complete endpoint setup guide
+- [ENDPOINT_QUICK_START.md](./ENDPOINT_QUICK_START.md) - Quick configuration reference
+
 ## Common Error Messages Explained
 
 | Error Message | Likely Cause | Solution |
 |--------------|--------------|----------|
+| "Hardware not compatible with selected model" | CPU instance selected for endpoint | Delete endpoint, create new one with T4/A10G/A100 GPU |
 | "Failed to fetch" | CORS or network issue | See sections 3 & 6 |
 | "Kunde inte ansluta till Hugging Face API" | CORS, network, or invalid key | See sections 1-3 |
 | "Ogiltig API-nyckel format" | Wrong API key format | Must start with 'hf_' |
